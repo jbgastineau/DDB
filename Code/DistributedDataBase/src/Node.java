@@ -1,34 +1,38 @@
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.concurrent.CountDownLatch;
 
 import javax.swing.JTextArea;
 
 
 public class Node extends Thread{
 	
-	int[] ports = new int[]{6001, 6002, 6003, 6004};
+	private int[] ports;
 	
 	private JTextArea console;
 	private int port;
 	private boolean repeat = true;
 	
-	
 	private ServerSocket serverSocket = null;
 	private Socket[] nodesSocket = null;
-	private BufferedReader[] nodesIn = null;
-	private DataOutputStream[] nodesOut = null;
+	private ObjectInputStream[] nodesIn = null;
+	private ObjectOutputStream[] nodesOut = null;
+	
+	private DataBaseHolder dataBase;
 	
 	public Node(JTextArea console) {
 		this.console = console;
+		
+		dataBase = new DataBaseHolder();
 	}
 	
-	public void setParam(int port){
+	public void setParam(int port, int[] ports){
 		this.port = port;
+		this.ports = ports;
 	}
 	
 	public void kill(){
@@ -60,123 +64,140 @@ public class Node extends Thread{
 		}
 		
 		while(repeat){
+			
 			try {
 				// wait for connection and prepare socket
 				console.append("Waiting for connection\n");
 				Socket client = serverSocket.accept();
-				BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-				DataOutputStream out = new DataOutputStream(client.getOutputStream());
+				ObjectInputStream in = new ObjectInputStream(client.getInputStream());
+				ObjectOutputStream out = new ObjectOutputStream(client.getOutputStream());
 				console.append("Client connected\n");
 				
 				// read message
-				String question = in.readLine();
-				Message message = Message.restore(question);
-				Command command = (Command)message.getContent();
-				console.append("Received command\n");
+				Integer sender = (Integer)in.readObject();
+				Command command = (Command)in.readObject();
 				
 				//Prepare answer
-				if(message.getSender() == Message.CLIENT){
+				if(sender.equals(Message.CLIENT)){
+					console.append("Received command from the client\n");
 					// connect to all nodes
 					establishConnectionsToNodes();
-					Command[] commands = CommandSplitter.split(command, 4);
+					Command[] commands = CommandSplitter.split(command, ports.length);
 					Data[] results = executeCommandsOnNodes(commands);
-					closeNodesSocket();
+
+					// prepare data and send it to the client
+					Data data = CommandSplitter.combineData(results);
+					out.writeObject(data);
 					
-					// prepare data
-					String res = "";
-					for(int i=0; i!=4; ++i){
-						if(ports[i] != serverSocket.getLocalPort()){
-							res += results[i].toString();
-						}
-					}
-					Data data = new Data("Hello Client!" + res);
-					Message answer = new Message(data, Message.NODE);
-					out.writeBytes(answer.toString() + '\n');
-					out.flush();
-				}else if(message.getSender() == Message.NODE){
-					if(command.input.endsWith("Hello Node!")){
-						Data data = new Data("Hello from node" + serverSocket.getLocalPort());
-						Message answer = new Message(data, Message.NODE);
-						out.writeBytes(answer.toString() + '\n');
-						out.flush();
-					}else{
-						Data data = new Data("dfvbsdfvsdfv");
-						Message answer = new Message(data, Message.NODE);
-						out.writeBytes(answer.toString() + '\n');
-						out.flush();
-					}
+					closeNodesSocket();
+				}else if(sender.equals(Message.NODE)){
+					console.append("Received command from the main node\n");
+					Data data = processCommand(command);
+					out.writeObject(data);
+					console.append("Sent data to the main node\n");
 				}
 				console.append("Sent data\n");
 				
-			} catch (IOException e1) {
-				console.append("Error\n");
-				e1.printStackTrace();
+			} catch (IOException e) {
+				console.append(e.getMessage() + '\n');
+				//e1.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				console.append(e.getMessage() + '\n');
+				//e.printStackTrace();
+			} catch (InterruptedException e) {
+				console.append(e.getMessage() + '\n');
+				e.printStackTrace();
 			}
 		}
+	}
+	
+	private Data processCommand(Command command){
+		Data result;
+		if(command.input.endsWith("Hello Node!")){
+			result = new Data("Hello from node" + serverSocket.getLocalPort());
+		}else{
+			result = new Data("dfvbsdfvsdfv");
+		}
+		return result;
 	}
 	
 	private void establishConnectionsToNodes(){
+
+		nodesSocket = new Socket[ports.length];
+		nodesIn = new ObjectInputStream[ports.length];
+		nodesOut = new ObjectOutputStream[ports.length];
 		
-		
-		nodesSocket = new Socket[]{null, null, null, null};
-		nodesIn = new BufferedReader[]{null, null, null, null};
-		nodesOut = new DataOutputStream[]{null, null, null, null};
-		
-		for(int i=0; i!=4; ++i){
+		for(int i=0; i!=ports.length; ++i){
 			if(ports[i] != serverSocket.getLocalPort()){
 				try {
 					nodesSocket[i] = new Socket("localhost", ports[i]);
-					nodesOut[i] = new DataOutputStream(nodesSocket[i].getOutputStream());
-					nodesIn[i] = new BufferedReader(new InputStreamReader(nodesSocket[i].getInputStream()));
+					nodesOut[i] = new ObjectOutputStream(nodesSocket[i].getOutputStream());
+					nodesIn[i] = new ObjectInputStream(nodesSocket[i].getInputStream());
 				} catch (UnknownHostException e) {
-					console.append("Error in connecting to node localhost:" + ports[i] + "\n");
-					e.printStackTrace();
+					console.append(e.getMessage() + '\n');
+					//e.printStackTrace();
 				} catch (IOException e) {
-					console.append("Error in connecting to node localhost:" + ports[i] + "\n");
-					e.printStackTrace();
+					console.append(e.getMessage() + '\n');
+					//e.printStackTrace();
 				}
 			}
 		}
 	}
 	
-	private Data[] executeCommandsOnNodes(Command[] commands){
-		Data[] result = new Data[4];
+	private Data[] executeCommandsOnNodes(final Command[] commands) throws InterruptedException{
+		final CountDownLatch latch = new CountDownLatch(ports.length);
+		final Data[] result = new Data[ports.length];
 		
-		for(int i=0; i!=4; ++i){
-			if(ports[i] != serverSocket.getLocalPort()){
-				try {
-					// send to the node
-					Message message = new Message(commands[i], Message.NODE);
-					nodesOut[i].writeBytes(message.toString() +"\n");
-					console.append("Sent to " + ports[i] + "\n");
+		for(int i=0; i!=ports.length; ++i){
+			final int index = i;
+			
+			Thread t = new Thread(new Runnable() {
+				@Override
+				public void run() {
 					
-					// receive from the node
-					String answer = nodesIn[i].readLine();
-					Message reply = Message.restore(answer);
-					result[i] = (Data)reply.getContent();
-					console.append("Received from " + ports[i] + "\n");
-				} catch (IOException e) {
-					console.append("Error in communicating to node localhost:" + ports[i] + "\n");
-					e.printStackTrace();
+					try {
+						if(ports[index] != serverSocket.getLocalPort()){
+							// send to the node
+							nodesOut[index].writeObject(Message.NODE);
+							nodesOut[index].writeObject(commands[index]);
+							console.append("Sent to " + ports[index] + "\n");
+						
+							// receive from the node
+							result[index] = (Data)nodesIn[index].readObject();
+							console.append("Received data from " + ports[index] + "\n");
+						}else{
+							result[index] = processCommand(commands[index]);
+							console.append("executed command here on " + ports[index] + "\n");
+						}
+					} catch (IOException e) {
+						console.append(e.getMessage() + '\n');
+						//e.printStackTrace();
+					} catch (ClassNotFoundException e) {
+						console.append(e.getMessage() + '\n');
+						//e.printStackTrace();
+					}finally{
+						latch.countDown();
+					}
 				}
-			}
+			});
+			t.start();
 			
 		}
+		
+		latch.await();
 		
 		return result;
 	}
 	
 	private void closeNodesSocket(){
 		for(int i=0; i!=4; ++i){
-			if(ports[i] != serverSocket.getLocalPort()){
-				if(nodesSocket[i] != null){
-					try {
-						nodesSocket[i].close();
-						nodesSocket[i] = null;
-					} catch (IOException e) {
-						console.append("Error in closing node localhost:" + ports[i] + "\n");
-						e.printStackTrace();
-					}
+			if(nodesSocket[i] != null){
+				try {
+					nodesSocket[i].close();
+					nodesSocket[i] = null;
+				} catch (IOException e) {
+					console.append(e.getMessage() + '\n');
+					//e.printStackTrace();
 				}
 			}
 		}

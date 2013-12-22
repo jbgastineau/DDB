@@ -18,6 +18,7 @@ import javax.swing.JTextArea;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
 import javax.swing.JScrollPane;
 
 
@@ -29,6 +30,7 @@ public class NodeFrame extends JFrame {
 	private static final long serialVersionUID = -2284152317883198487L;
 
 	private Node node;
+	private int[] portslist;
 	
 	private JPanel contentPane;
 	private JSpinner portNumber;
@@ -36,12 +38,31 @@ public class NodeFrame extends JFrame {
 
 	/**
 	 * Launch the application.
+	 * 
+	 * arg[0]	x position
+	 * arg[1]	y position
+	 * arg[2]   port number
+	 * arg[3]	list of nodes port
+	 * 
 	 */
 	public static void main(String[] args) {
+		
+		final int x = Integer.parseInt(args[0]);
+		final int y = Integer.parseInt(args[1]);
+		final int port = Integer.parseInt(args[2]);
+		String temp[] = args[3].split(",");
+		final int[] ports = new int[temp.length];
+		for(int i=0; i!=temp.length; ++i){
+			ports[i] = Integer.parseInt(temp[i]);
+		}
+		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
 					NodeFrame frame = new NodeFrame();
+					frame.setBounds(x, y, 350, 300);
+					frame.getPortNumber().setValue(port);
+					frame.setPortsList(ports);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -83,7 +104,7 @@ public class NodeFrame extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				int port = (Integer)portNumber.getValue();
 				node = new Node(console);
-				node.setParam(port);
+				node.setParam(port, portslist);
 				node.start();
 			}
 		});
@@ -108,6 +129,10 @@ public class NodeFrame extends JFrame {
 		console = new JTextArea();
 		console.setEditable(false);
 		scrollPane.setViewportView(console);
+	}
+	
+	public void setPortsList(int[] portslist){
+		this.portslist = portslist;
 	}
 
 	public JSpinner getPortNumber() {

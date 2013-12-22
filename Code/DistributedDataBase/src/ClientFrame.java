@@ -35,12 +35,20 @@ public class ClientFrame extends JFrame {
 
 	/**
 	 * Launch the application.
+	 * 
+	 * arg[0]	x position
+	 * arg[1]	y position
 	 */
 	public static void main(String[] args) {
+		
+		final int x = Integer.parseInt(args[0]);
+		final int y = Integer.parseInt(args[1]);
+		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
 					ClientFrame frame = new ClientFrame();
+					frame.setBounds(x, y, 450, 300);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
