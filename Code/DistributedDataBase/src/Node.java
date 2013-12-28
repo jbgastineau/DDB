@@ -15,6 +15,7 @@ public class Node extends Thread{
 	
 	private JTextArea console;
 	private int port;
+	private String dbName;
 	private boolean repeat = true;
 	
 	private ServerSocket serverSocket = null;
@@ -27,12 +28,13 @@ public class Node extends Thread{
 	public Node(JTextArea console) {
 		this.console = console;
 		
-		dataBase = new DataBaseHolder();
+		dataBase = new DataBaseHolder(console);
 	}
 	
-	public void setParam(int port, int[] ports){
+	public void setParam(int port, int[] ports, String dbName){
 		this.port = port;
 		this.ports = ports;
+		this.dbName = dbName;
 	}
 	
 	public void kill(){
@@ -62,6 +64,8 @@ public class Node extends Thread{
 			console.append("Not started\n");
 			return;
 		}
+		
+		dataBase.connect(dbName);
 		
 		while(repeat){
 			
@@ -115,6 +119,10 @@ public class Node extends Thread{
 		Data result;
 		if(command.input.endsWith("Hello Node!")){
 			result = new Data("Hello from node" + serverSocket.getLocalPort());
+		}else if(command.type == Command.CREATE_TABLE){
+			result = dataBase.execute(command);
+		}else if(command.type == Command.DROP_TABLE){
+			result = dataBase.execute(command);
 		}else{
 			result = new Data("dfvbsdfvsdfv");
 		}

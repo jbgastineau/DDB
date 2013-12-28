@@ -4,40 +4,39 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 import java.awt.GridLayout;
 
+import javax.swing.JLabel;
 import javax.swing.JSpinner;
 
 import java.awt.FlowLayout;
 
-import javax.swing.SpinnerNumberModel;
-import javax.swing.JLabel;
-import javax.swing.JButton;
 import javax.swing.JTextField;
+import javax.swing.JButton;
+import javax.swing.SpinnerNumberModel;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
-import javax.swing.JTextArea;
-import javax.swing.JScrollPane;
-
 
 public class ClientFrame extends JFrame {
+
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -6577256907151014674L;
+	private static final long serialVersionUID = -2709504377688590640L;
 	private JPanel contentPane;
-	private JTextField txtQuestion;
+	private JTextField message1;
+	private JTextField message2;
 	private JSpinner portNumber;
 	private JTextArea console;
+	private JTextField message3;
 
 	/**
 	 * Launch the application.
-	 * 
-	 * arg[0]	x position
-	 * arg[1]	y position
 	 */
 	public static void main(String[] args) {
 		
@@ -48,7 +47,7 @@ public class ClientFrame extends JFrame {
 			public void run() {
 				try {
 					ClientFrame frame = new ClientFrame();
-					frame.setBounds(x, y, 450, 300);
+					frame.setBounds(x, y, 1300, 450);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -61,67 +60,109 @@ public class ClientFrame extends JFrame {
 	 * Create the frame.
 	 */
 	public ClientFrame() {
-
-		setTitle("Client");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
+		setBounds(100, 100, 1000, 500);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
 		
+		JScrollPane scrollPane = new JScrollPane();
+		contentPane.add(scrollPane, BorderLayout.CENTER);
+		
+		console = new JTextArea();
+		scrollPane.setViewportView(console);
+		
 		JPanel panel = new JPanel();
 		contentPane.add(panel, BorderLayout.SOUTH);
-		panel.setLayout(new GridLayout(2, 0, 0, 0));
+		panel.setLayout(new GridLayout(4, 0, 0, 0));
+		
+		JPanel panel_1 = new JPanel();
+		FlowLayout flowLayout = (FlowLayout) panel_1.getLayout();
+		flowLayout.setAlignment(FlowLayout.LEFT);
+		panel.add(panel_1);
+		
+		JLabel lblPortNumber = new JLabel("Port number:");
+		panel_1.add(lblPortNumber);
+		
+		portNumber = new JSpinner();
+		portNumber.setModel(new SpinnerNumberModel(new Integer(6001), null, null, new Integer(1)));
+		panel_1.add(portNumber);
 		
 		JPanel panel_2 = new JPanel();
 		FlowLayout flowLayout_1 = (FlowLayout) panel_2.getLayout();
 		flowLayout_1.setAlignment(FlowLayout.LEFT);
 		panel.add(panel_2);
 		
-		JLabel lblPortNumber = new JLabel("Port number:");
-		panel_2.add(lblPortNumber);
-		
-		portNumber = new JSpinner();
-		panel_2.add(portNumber);
-		portNumber.setModel(new SpinnerNumberModel(6001, 0, 10000, 1));
-		
-		JLabel lblMessage = new JLabel("Message: ");
-		panel_2.add(lblMessage);
-		
-		txtQuestion = new JTextField();
-		txtQuestion.setText("Hello System!");
-		panel_2.add(txtQuestion);
-		txtQuestion.setColumns(10);
+		message1 = new JTextField();
+		message1.setText("Hello System!");
+		panel_2.add(message1);
+		message1.setColumns(100);
 		
 		JButton btnSend = new JButton("Send");
 		btnSend.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent arg0) {
 				Client client = new Client(console);
-				client.setParam(new NodeName("localhost", (Integer)portNumber.getValue()), txtQuestion.getText());
+				client.setParam(new NodeName("localhost", (Integer)portNumber.getValue()), message1.getText());
 				client.start();
 			}
 		});
 		panel_2.add(btnSend);
 		
-		JScrollPane scrollPane = new JScrollPane();
-		contentPane.add(scrollPane, BorderLayout.CENTER);
+		JPanel panel_3 = new JPanel();
+		FlowLayout flowLayout_2 = (FlowLayout) panel_3.getLayout();
+		flowLayout_2.setAlignment(FlowLayout.LEFT);
+		panel.add(panel_3);
 		
-		console = new JTextArea();
-		console.setEditable(false);
-		scrollPane.setViewportView(console);
+		message2 = new JTextField();
+		message2.setText("CREATE TABLE COMPANY (ID INT PRIMARY KEY NOT NULL, NAME TEXT NOT NULL, AGE INT NOT NULL, ADDRESS CHAR(50), SALARY REAL)");
+		panel_3.add(message2);
+		message2.setColumns(100);
 		
+		JButton btnSend_1 = new JButton("Send");
+		btnSend_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Client client = new Client(console);
+				client.setParam(new NodeName("localhost", (Integer)portNumber.getValue()), message2.getText());
+				client.start();
+			}
+		});
+		panel_3.add(btnSend_1);
 		
+		JPanel panel_4 = new JPanel();
+		FlowLayout flowLayout_3 = (FlowLayout) panel_4.getLayout();
+		flowLayout_3.setAlignment(FlowLayout.LEFT);
+		panel.add(panel_4);
 		
+		message3 = new JTextField();
+		message3.setText("DROP TABLE COMPANY");
+		panel_4.add(message3);
+		message3.setColumns(100);
+		
+		JButton btnSend_2 = new JButton("Send");
+		btnSend_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				Client client = new Client(console);
+				client.setParam(new NodeName("localhost", (Integer)portNumber.getValue()), message3.getText());
+				client.start();
+			}
+		});
+		panel_4.add(btnSend_2);
 	}
 
-	public JSpinner getPortNumber() {
-		return portNumber;
+	public JTextField getMessage1() {
+		return message1;
 	}
-	public JTextField getTxtQuestion() {
-		return txtQuestion;
+	public JTextField getMessage2() {
+		return message2;
+	}
+	public JSpinner getSpinner() {
+		return portNumber;
 	}
 	public JTextArea getConsole() {
 		return console;
+	}
+	public JTextField getMessage3() {
+		return message3;
 	}
 }

@@ -3,10 +3,12 @@ public class Launcher {
 	
 	private static final int NUMBER_OF_NODES = 5;
 	
-	private static final String PORTS_LIST_4 = "6001,6002,6003,6004";
+	//private static final String PORTS_LIST_4 = "6001,6002,6003,6004";
 	private static final String PORTS_LIST_5 = "6001,6002,6003,6004,6005";
 
 	private static final int[] PORTS = new int[]{6001, 6002, 6003, 6004, 6005};
+	
+	private static final String[] DBs = new String[]{"test1.db", "test2.db", "test3.db", "test4.db", "test5.db"};
 	
 	public static void main(String[] args) {
 		// launch client
@@ -23,7 +25,7 @@ public class Launcher {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					NodeFrame.main(new String[]{Integer.toString(index*380), "500", Integer.toString(PORTS[index]), PORTS_LIST_5});
+					NodeFrame.main(new String[]{Integer.toString(index*380), "500", Integer.toString(PORTS[index]), PORTS_LIST_5, DBs[index]});
 				}
 			}).start();
 		}

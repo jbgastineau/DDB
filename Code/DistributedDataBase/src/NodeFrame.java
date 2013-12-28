@@ -31,6 +31,7 @@ public class NodeFrame extends JFrame {
 
 	private Node node;
 	private int[] portslist;
+	private String dbName;
 	
 	private JPanel contentPane;
 	private JSpinner portNumber;
@@ -55,6 +56,7 @@ public class NodeFrame extends JFrame {
 		for(int i=0; i!=temp.length; ++i){
 			ports[i] = Integer.parseInt(temp[i]);
 		}
+		final String dbName = args[4];
 		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -63,6 +65,7 @@ public class NodeFrame extends JFrame {
 					frame.setBounds(x, y, 350, 300);
 					frame.getPortNumber().setValue(port);
 					frame.setPortsList(ports);
+					frame.setDBName(dbName);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -104,7 +107,7 @@ public class NodeFrame extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				int port = (Integer)portNumber.getValue();
 				node = new Node(console);
-				node.setParam(port, portslist);
+				node.setParam(port, portslist, dbName);
 				node.start();
 			}
 		});
@@ -133,6 +136,10 @@ public class NodeFrame extends JFrame {
 	
 	public void setPortsList(int[] portslist){
 		this.portslist = portslist;
+	}
+	
+	public void setDBName(String dbName){
+		this.dbName = dbName;
 	}
 
 	public JSpinner getPortNumber() {
