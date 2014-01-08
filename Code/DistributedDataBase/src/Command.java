@@ -5,7 +5,10 @@ import java.io.Serializable;
 public class Command implements Serializable{
 	
 	public static final int CREATE_TABLE = 1;
-	public static final int DROP_TABLE = 2;
+    public static final int DROP_TABLE = 2;
+    public static final int SELECT_TABLE = 3;
+    public static final int INSERT_TABLE = 4;
+    public static final int UPDATE_TABLE = 5;
 	
 	/**
 	 * 
@@ -26,20 +29,30 @@ public class Command implements Serializable{
 	 */
 	public static Command parse(String input) throws Exception{
 		Command result = new Command();
-		
-		if(input.equals("Hello System!")){
-			result.input = input;
-		}else if(input.equals("Hello Node!")){
-			result.input = input;
-		}else if(input.startsWith("CREATE")){
-			result.input = input;
-			result.type = CREATE_TABLE;
-		}else if(input.startsWith("DROP")){
-			result.input = input;
-			result.type = DROP_TABLE;
-		}else{
-			throw new Exception("Command is incorect");
-		}
+        // input=input.toUpperCase();
+         if(input.equals("Hello System!")){
+                 result.input = input;
+         }else if(input.equals("Hello Node!")){
+                 result.input = input;
+         }else if(input.toUpperCase().startsWith("CREATE")){
+                 result.input = input;
+                 result.type = CREATE_TABLE;
+         }else if(input.toUpperCase().startsWith("DROP")){
+                 result.input = input;
+                 result.type = DROP_TABLE;
+         }else if(input.toUpperCase().startsWith("SELECT")){
+                 result.input = input;
+                 result.type = SELECT_TABLE;
+         }else if(input.toUpperCase().startsWith("INSERT")){
+                 result.input = input;
+                 result.type = INSERT_TABLE;
+         }else if(input.toUpperCase().startsWith("UPDATE")){
+                 result.input = input;
+                 result.type = UPDATE_TABLE;
+         }
+         else{
+                 throw new Exception("Command is incorect");
+         }
 		
 		return result;
 	}

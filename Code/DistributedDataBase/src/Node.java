@@ -120,11 +120,17 @@ public class Node extends Thread{
 		if(command.input.endsWith("Hello Node!")){
 			result = new Data("Hello from node" + serverSocket.getLocalPort());
 		}else if(command.type == Command.CREATE_TABLE){
-			result = dataBase.execute(command);
+            result = dataBase.execute(command);
 		}else if(command.type == Command.DROP_TABLE){
-			result = dataBase.execute(command);
+            result = dataBase.execute(command);
+		}else if(command.type == Command.SELECT_TABLE){
+            result = dataBase.execute(command);
+		}else if(command.type == Command.INSERT_TABLE){
+            result = dataBase.execute(command);
+		}else if(command.type == Command.UPDATE_TABLE){
+            result = dataBase.execute(command);
 		}else{
-			result = new Data("dfvbsdfvsdfv");
+            result = new Data("dfvbsdfvsdfv");
 		}
 		return result;
 	}
