@@ -1,8 +1,5 @@
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -70,11 +67,11 @@ public class CommandSplitter {
                         */																	// Anton, code commented
                 	
                 	// create command for two nodes chosen by random						//	
-                	Random r = new Random();												// choose the first node
+                	Random r = new Random();												// Anton, choose the first node
                 	int i1 = r.nextInt(n);													//
                 	result[i1] = Command.createCopy(command);								//
                 	
-                	int i2 = r.nextInt(n);													// chose the second node
+                	int i2 = r.nextInt(n);													// Anton, chose the second node
                 	while(i2==i1){															//
                 		i2 = r.nextInt(n);													//
                 	}																		//
@@ -96,28 +93,28 @@ public class CommandSplitter {
         }
         
         public static Data combineData(int commandType, Data[] data){							// Anton, new parameter added
-        	
-        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE){		// in case of create table command
-        		
+        																						//
+        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE){		// Anton, in case of create table command
+        																						//
         		for (Data d : data) {															//	
-					if(d.success == false){														// return data with error
+					if(d.success == false){														// Anton, return data with error
 						return d;																//
 					}																			//
-				}																				// or return good i.e. the first one
+				}																				// Anton, or return good i.e. the first one
         		return data[0];									
         		
         	}if(commandType == Command.INSERT_TABLE){
         		
         		for (Data d : data) {															//	
-					if(d!= null && d.success == false){											// return data with error
+					if(d!= null && d.success == false){											// Anton, return data with error
 						return d;																//
 					}																			//
 				}																				
         		for (Data d : data) {
-					if(d!=null)	return d;														// or return good i.e. the first one
+					if(d!=null)	return d;														// Anton, or return good i.e. the first one
 				}
         		
-        		return null;																	// expected that two data are not null
+        		return null;																	// Anton, expected that two data are not null
         		
         	}else{
                 String res = "";

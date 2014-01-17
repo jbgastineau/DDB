@@ -17,6 +17,7 @@ public class Data implements Serializable{
         public String str;
         public HashMap<String,String> res;
         public boolean success = false;																// Anton, new field to indicate if a command was executed successfully
+        public boolean nomoreselected = false;														// Anton, new field to indicate for SELECT command that there are no more rows to fetch
         
         /**
          * 
@@ -45,10 +46,8 @@ public class Data implements Serializable{
         }
         public void display(int commandType, JTextArea console) {							// Anton, new parameter, just for fun
         	
-        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE || commandType == Command.INSERT_TABLE){	//
-        		console.append("+--------------------+\n");									//
-        		console.append(str + '\n');													//
-        		console.append("+--------------------+\n");									// see above
+        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE || commandType == Command.INSERT_TABLE || commandType == Command.SELECT_TABLE){	//
+        		console.append(str + '\n');													// see above
         		
         	}else{
         		Set<String> keys = res.keySet();

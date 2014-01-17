@@ -3,6 +3,8 @@
  *
  * @author Alrfou
  */
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -10,7 +12,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,13 +23,14 @@ public class DataBaseHolder {
         
         private JTextArea console;
         private Connection c = null;
-        private String conn;
+        private String dbName = null;
        
         public DataBaseHolder(JTextArea console) {
                 this.console = console;
         }
         
         public void connect(String dbName){
+        	this.dbName = dbName;
                 
             try {
                     Class.forName("org.sqlite.JDBC");
@@ -39,6 +41,17 @@ public class DataBaseHolder {
                     console.append(e.getClass().getName() + ": " + e.getMessage() + '\n');
             }
             console.append("Database " + dbName + " opened successfully\n");									// Anton, change output message
+        }
+        
+        public void disconnect(){																				// Anton, new method for disconnecting from database
+        	if(c!=null){
+        		try {
+					c.close();
+				} catch (SQLException e) {
+					console.append(e.getMessage() + '\n');
+				}
+        		c = null;
+        	}
         }
         /*
         
@@ -69,6 +82,10 @@ public class DataBaseHolder {
                                 result = new Data(e.getMessage());
                         }        
                 }else if(command.type == Command.DROP_TABLE){
+                	
+                	disconnect();																				// Anton, to avoid error message "database table is locked" 
+                	connect(dbName);																			//
+                	
                         Statement stmt = null;
                         try {
                                 stmt = c.createStatement();
@@ -82,7 +99,7 @@ public class DataBaseHolder {
                                 console.append(e.getClass().getName() + ": " + e.getMessage() + '\n');
                                 result = new Data(e.getMessage());
                         }        
-                }else if(command.type==Command.SELECT_TABLE)
+                }else /*if(command.type==Command.SELECT_TABLE)													// Anton, commented see new method executeSelect
                 {
                        //System.out.println("insert tables1");
                             Statement stmt = null;
@@ -161,7 +178,7 @@ public class DataBaseHolder {
                            }
                      // return arr;
   
-                }else if(command.type==Command.INSERT_TABLE)
+                }else*/ if(command.type==Command.INSERT_TABLE)
                 {
                       Statement stmt = null;
                          //System.out.println("Create tables");
@@ -202,6 +219,59 @@ public class DataBaseHolder {
                 }
                 
                 return result;
+        }
+        
+        public void executeSelect(Command command, ObjectOutputStream out){							// Anton, new function to process SELECT command
+        	Statement stmt = null;
+        	String res2 = "";
+
+        	try {
+                try{
+                	String QRY = command.input;
+                	stmt = c.createStatement();
+                	ResultSet rs = stmt.executeQuery(QRY);
+                	ResultSetMetaData md = rs.getMetaData() ;
+                	SQLQuery sql=new SQLQuery();
+                	sql.parse(QRY);
+                	String tab=GetPrimarykey(sql.tables.get(0));
+                	System.out.println(tab+"is Primary key");
+                	String s = null ;
+                	while( rs.next() )
+                	{
+                		res2="";
+                		for( int i = 1; i <= md.getColumnCount(); i++ )
+                		{
+                			System.out.println(md.getColumnLabel(i)+ rs.getString(i));
+                			if(md.getColumnName(i).equals(tab)){
+                				s=rs.getString(i);
+                			}
+                			System.out.println(s+":is the value of primary key");
+                			res2+=rs.getString(i)+" ";
+         
+                		}
+                		
+                		Data result = new Data(res2.toString());
+                		result.success = true;
+                		synchronized (out) {
+                			out.writeObject(result);
+						}
+                		console.append(res2.toString() + " sent to the main node\n");
+
+                	}
+                                          
+                	rs.close();
+                	stmt.close();
+                	
+                } catch (SQLException e) {
+                	console.append(e.getClass().getName() + ": " + e.getMessage() + '\n');
+                	Data result = new Data(e.getMessage());
+                	synchronized (out) {
+            			out.writeObject(result);
+					}
+                }
+        	} catch (IOException e) {
+        		console.append(e.getMessage() + '\n');
+			}
         }
         
         public  boolean checktable(String table)

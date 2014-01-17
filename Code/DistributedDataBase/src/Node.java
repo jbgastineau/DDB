@@ -95,11 +95,22 @@ public class Node extends Thread{
 						console.append(" -\nReceived command from the client\n");
 					
 						Command[] commands = CommandSplitter.split(command, ports.length);
-						Data[] results = executeCommandsOnNodes(command.type, commands);
-
-						// prepare data and send it to the client
-						Data data = CommandSplitter.combineData(command.type, results);
-						out.writeObject(data);
+						
+						if(command.type == Command.SELECT_TABLE){
+							executeSelectCommandsOnNodes(commands, out);
+							
+							Data data = new Data();
+							data.nomoreselected = true;
+							data.success = true;
+							out.writeObject(data);
+						}else{
+							Data[] results = executeCommandsOnNodes(command.type, commands);
+							
+							// prepare data and send it to the client
+							Data data = CommandSplitter.combineData(command.type, results);
+							out.writeObject(data);
+							
+						}
 						console.append("Sent data to the client\n");
 						
 						msg = (Integer)in.readObject();
@@ -113,9 +124,21 @@ public class Node extends Thread{
 						Command command = (Command)in.readObject();
 						console.append(" - Received command from the main node\n");
 						
-						Data data = processCommand(command);
-						out.writeObject(data);
-						console.append("Sent data to the main node\n");
+						if(command.type == Command.SELECT_TABLE){
+							processSelectCommand(command, out);
+							
+		                	Data result = new Data();
+		                	result.nomoreselected = true;
+		                	result.success = true;
+		                	synchronized (out) {
+	                			out.writeObject(result);
+							}
+		                	console.append("terminator is sent to the main node\n");
+						}else{
+							Data data = processCommand(command);
+							out.writeObject(data);
+							console.append("Sent data to the main node\n");
+						}
 						
 						msg = (Integer)in.readObject();
 					}
@@ -145,8 +168,6 @@ public class Node extends Thread{
             result = dataBase.execute(command);
 		}else if(command.type == Command.DROP_TABLE){
             result = dataBase.execute(command);
-		}else if(command.type == Command.SELECT_TABLE){
-            result = dataBase.execute(command);
 		}else if(command.type == Command.INSERT_TABLE){
             result = dataBase.execute(command);
 		}else if(command.type == Command.UPDATE_TABLE){
@@ -155,6 +176,10 @@ public class Node extends Thread{
             result = new Data("Unknown coommand");
 		}
 		return result;
+	}
+	
+	private void processSelectCommand(Command command, ObjectOutputStream out){
+		dataBase.executeSelect(command, out);
 	}
 	
 	private void establishConnectionsToNodes(){
@@ -251,6 +276,78 @@ public class Node extends Thread{
 		latch.await();
 		
 		return result;
+	}
+	
+	
+	private void executeSelectCommandsOnNodes(final Command[] commands, final ObjectOutputStream clientOut) throws InterruptedException{
+		final int maxCounterMsg = ports.length;
+		final CountDownLatch latch = new CountDownLatch(maxCounterMsg);
+		
+		for(int i=0; i!=ports.length; ++i){
+			final int index = i;
+			
+			if(commands[index] == null)	continue;
+			
+			Thread t = new Thread(new Runnable() {
+				@Override
+				public void run() {
+					
+					try {
+						if(ports[index] != serverSocket.getLocalPort()){
+							// send to the node
+							nodesOut[index].writeObject(Message.NODE);
+							nodesOut[index].writeObject(commands[index]);
+							
+							// output to the console
+							++counterMsgSent;
+							if(counterMsgSent == maxCounterMsg){
+								console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
+								counterMsgSent = 0;
+							}
+						
+							// receive from the node
+							Data data = (Data)nodesIn[index].readObject();
+							while(data.nomoreselected == false){
+								synchronized (clientOut) {
+									clientOut.writeObject(data);
+								}
+								data = (Data)nodesIn[index].readObject();
+							}
+							
+							// output to the console
+							++counterMsgReceived;
+							if(counterMsgReceived == maxCounterMsg){
+								console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
+								counterMsgReceived = 0;
+							}
+						}else{
+							++counterMsgSent;
+							if(counterMsgSent == maxCounterMsg){
+								console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
+								counterMsgSent = 0;
+							}
+							processSelectCommand(commands[index], clientOut);
+							++counterMsgReceived;
+							if(counterMsgReceived == maxCounterMsg){
+								console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
+								counterMsgReceived = 0;
+							}
+						}
+					} catch (IOException e) {
+						console.append(e.getMessage() + '\n');
+					} catch (ClassNotFoundException e) {
+						console.append(e.getMessage() + '\n');
+					}finally{
+						latch.countDown();
+					}
+				}
+			});
+			
+			t.start();
+			
+		}
+		
+		latch.await();
 	}
 	
 	private void terminateConnectionsToNodes(){

@@ -72,9 +72,23 @@ public class Client extends Thread{
 				console.append("Command " + i + " sent: " + commands[i].input + "\n");
 			
 				// receive from the node
-				Data data = (Data)in.readObject();
-				console.append("Received data\n");
-				data.display(commands[i].type, console);
+				if(commands[i].type == Command.SELECT_TABLE){
+					Data data = (Data)in.readObject();
+					console.append("--------------------\n");
+					int countSelected = 0;
+					while(data.nomoreselected == false){
+						data.display(commands[i].type, console);
+						++ countSelected;
+						data = (Data)in.readObject();
+					}
+					console.append(countSelected + " row selected\n");
+					console.append("--------------------\n");
+				}else{
+					Data data = (Data)in.readObject();
+					console.append("--------------------\n");
+					data.display(commands[i].type, console);
+					console.append("--------------------\n");
+				}
 			}
 			
 			out.writeObject(Message.TERMINATE);
