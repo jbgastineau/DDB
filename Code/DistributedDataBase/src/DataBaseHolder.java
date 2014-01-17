@@ -6,7 +6,6 @@
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -39,7 +38,7 @@ public class DataBaseHolder {
             }catch(Exception e){
                     console.append(e.getClass().getName() + ": " + e.getMessage() + '\n');
             }
-            console.append("Opened database successfully to " + dbName + '\n');
+            console.append("Database " + dbName + " opened successfully\n");									// Anton, change output message
         }
         /*
         
@@ -64,6 +63,7 @@ public class DataBaseHolder {
                                 stmt.close();
                                 console.append("Table created successfully" + '\n');
                                 result = new Data("Table created successfully");
+                                result.success = true;															// Anton, new field in data
                         }catch(Exception e) {
                                 console.append(e.getClass().getName() + ": " + e.getMessage() + '\n');
                                 result = new Data(e.getMessage());
@@ -77,6 +77,7 @@ public class DataBaseHolder {
                                 stmt.close();
                                 console.append("Table dropped successfully" + '\n');
                                 result = new Data("Table dropped successfully");
+                                result.success = true;															// Anton, new field in data
                         }catch(Exception e) {
                                 console.append(e.getClass().getName() + ": " + e.getMessage() + '\n');
                                 result = new Data(e.getMessage());

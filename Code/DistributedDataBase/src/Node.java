@@ -17,6 +17,8 @@ public class Node extends Thread{
 	private int port;
 	private String dbName;
 	private boolean repeat = true;
+	private int counterMsgSent = 0;
+	private int counterMsgReceived = 0;
 	
 	private ServerSocket serverSocket = null;
 	private Socket[] nodesSocket = null;
@@ -54,7 +56,7 @@ public class Node extends Thread{
 		try {
 			serverSocket = new ServerSocket(port);
 			
-			console.append("Started\n");
+			console.append("Started on port " + port + "\n");
 		} catch (IOException e1) {
 			console.append("Not started\n");
 			e1.printStackTrace();
@@ -71,36 +73,56 @@ public class Node extends Thread{
 			
 			try {
 				// wait for connection and prepare socket
-				console.append("Waiting for connection\n");
+				console.append("\nWaiting for connection...\n");
 				Socket client = serverSocket.accept();
+				
+				long time1 = System.currentTimeMillis();
+				
 				ObjectInputStream in = new ObjectInputStream(client.getInputStream());
 				ObjectOutputStream out = new ObjectOutputStream(client.getOutputStream());
-				console.append("Client connected\n");
 				
 				// read message
-				Integer sender = (Integer)in.readObject();
-				Command command = (Command)in.readObject();
+				Integer msg = (Integer)in.readObject();
 				
 				//Prepare answer
-				if(sender.equals(Message.CLIENT)){
-					console.append("Received command from the client\n");
+				if(msg.equals(Message.CLIENT)){
+					console.append("Client connected\n");
 					// connect to all nodes
 					establishConnectionsToNodes();
-					Command[] commands = CommandSplitter.split(command, ports.length);
-					Data[] results = executeCommandsOnNodes(commands);
-
-					// prepare data and send it to the client
-					Data data = CommandSplitter.combineData(results);
-					out.writeObject(data);
 					
-					closeNodesSocket();
-				}else if(sender.equals(Message.NODE)){
-					console.append("Received command from the main node\n");
-					Data data = processCommand(command);
-					out.writeObject(data);
-					console.append("Sent data to the main node\n");
+					while(!msg.equals(Message.TERMINATE)){
+						Command command = (Command)in.readObject();
+						console.append(" -\nReceived command from the client\n");
+					
+						Command[] commands = CommandSplitter.split(command, ports.length);
+						Data[] results = executeCommandsOnNodes(commands);
+
+						// prepare data and send it to the client
+						Data data = CommandSplitter.combineData(command.type, results);
+						out.writeObject(data);
+						console.append("Sent data to the client\n");
+						
+						msg = (Integer)in.readObject();
+					}
+					
+					terminateConnectionsToNodes();
+				}else if(msg.equals(Message.NODE)){
+					console.append("Main node connected\n");
+					
+					while(!msg.equals(Message.TERMINATE)){
+						Command command = (Command)in.readObject();
+						console.append(" - Received command from the main node\n");
+						
+						Data data = processCommand(command);
+						out.writeObject(data);
+						console.append("Sent data to the main node\n");
+						
+						msg = (Integer)in.readObject();
+					}
 				}
-				console.append("Sent data\n");
+				
+				long time2 = System.currentTimeMillis();
+				console.append("Execution time: " + (time2 - time1) + " ms.\n");
 				
 			} catch (IOException e) {
 				console.append(e.getMessage() + '\n');
@@ -130,7 +152,7 @@ public class Node extends Thread{
 		}else if(command.type == Command.UPDATE_TABLE){
             result = dataBase.execute(command);
 		}else{
-            result = new Data("dfvbsdfvsdfv");
+            result = new Data("Unknown coommand");
 		}
 		return result;
 	}
@@ -174,26 +196,36 @@ public class Node extends Thread{
 							// send to the node
 							nodesOut[index].writeObject(Message.NODE);
 							nodesOut[index].writeObject(commands[index]);
-							console.append("Sent to " + ports[index] + "\n");
+							
+							// output to the console
+							++counterMsgSent;
+							if(counterMsgSent == ports.length-1){
+								console.append("Command has been sent to " + counterMsgSent + " from " + ports.length + " nodes\n");
+								counterMsgSent = 0;
+							}
 						
 							// receive from the node
 							result[index] = (Data)nodesIn[index].readObject();
-							console.append("Received data from " + ports[index] + "\n");
+							
+							// output to the console
+							++counterMsgReceived;
+							if(counterMsgReceived == ports.length-1){
+								console.append("Command has been sent to " + counterMsgReceived + " from " + ports.length + " nodes\n");
+								counterMsgReceived = 0;
+							}
 						}else{
 							result[index] = processCommand(commands[index]);
-							console.append("executed command here on " + ports[index] + "\n");
 						}
 					} catch (IOException e) {
 						console.append(e.getMessage() + '\n');
-						//e.printStackTrace();
 					} catch (ClassNotFoundException e) {
 						console.append(e.getMessage() + '\n');
-						//e.printStackTrace();
 					}finally{
 						latch.countDown();
 					}
 				}
 			});
+			
 			t.start();
 			
 		}
@@ -203,15 +235,15 @@ public class Node extends Thread{
 		return result;
 	}
 	
-	private void closeNodesSocket(){
-		for(int i=0; i!=4; ++i){
+	private void terminateConnectionsToNodes(){
+		for(int i=0; i!=ports.length; ++i){
 			if(nodesSocket[i] != null){
 				try {
+					nodesOut[i].writeObject(Message.TERMINATE);
 					nodesSocket[i].close();
 					nodesSocket[i] = null;
 				} catch (IOException e) {
 					console.append(e.getMessage() + '\n');
-					//e.printStackTrace();
 				}
 			}
 		}

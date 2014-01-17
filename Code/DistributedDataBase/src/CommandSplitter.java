@@ -74,7 +74,18 @@ public class CommandSplitter {
                 return result;
         }
         
-        public static Data combineData(Data[] data){
+        public static Data combineData(int commandType, Data[] data){							// Anton, new parameter added
+        	
+        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE){		// in case of create table command
+        		
+        		for (Data d : data) {															//	
+					if(d.success == false){														// return data with error
+						return d;																//
+					}																			//
+				}																				// or return good i.e. the first one
+        		return data[0];									
+        		
+        	}else{
                 String res = "";
                  HashMap<String,String> res1 = new HashMap<String,String>();
                 for(int i=0; i!=data.length; ++i){
@@ -87,6 +98,7 @@ public class CommandSplitter {
                 }
                 System.out.println("the colication data is"+ res1);
                 return new Data("Hello Client!"+'\n' + res,res1);
+        	}
         }
         
 }

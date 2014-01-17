@@ -25,7 +25,7 @@ public class Launcher {
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					NodeFrame.main(new String[]{Integer.toString(index*380), "500", Integer.toString(PORTS[index]), PORTS_LIST_5, DBs[index]});
+					NodeFrame.main(new String[]{Integer.toString(index*380), "600", Integer.toString(PORTS[index]), PORTS_LIST_5, DBs[index]});
 				}
 			}).start();
 		}
