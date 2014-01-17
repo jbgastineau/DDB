@@ -2,10 +2,10 @@
  *
  * @author Alrfou
  */
-import static com.sun.org.apache.xalan.internal.lib.ExsltDynamic.map;
 import java.io.Serializable;
 
 import javax.swing.JTextArea;
+
 import java.util.*;
 
 
@@ -45,7 +45,7 @@ public class Data implements Serializable{
         }
         public void display(int commandType, JTextArea console) {							// Anton, new parameter, just for fun
         	
-        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE){	//
+        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE || commandType == Command.INSERT_TABLE){	//
         		console.append("+--------------------+\n");									//
         		console.append(str + '\n');													//
         		console.append("+--------------------+\n");									// see above
@@ -70,5 +70,10 @@ public class Data implements Serializable{
         		}
             }
                 
+        }
+        
+        @Override
+        public String toString() {
+        	return str;
         }
 }

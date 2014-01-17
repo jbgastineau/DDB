@@ -95,7 +95,7 @@ public class Node extends Thread{
 						console.append(" -\nReceived command from the client\n");
 					
 						Command[] commands = CommandSplitter.split(command, ports.length);
-						Data[] results = executeCommandsOnNodes(commands);
+						Data[] results = executeCommandsOnNodes(command.type, commands);
 
 						// prepare data and send it to the client
 						Data data = CommandSplitter.combineData(command.type, results);
@@ -180,12 +180,20 @@ public class Node extends Thread{
 		}
 	}
 	
-	private Data[] executeCommandsOnNodes(final Command[] commands) throws InterruptedException{
-		final CountDownLatch latch = new CountDownLatch(ports.length);
+	private Data[] executeCommandsOnNodes(int commandType,final Command[] commands) throws InterruptedException{
+		final int maxCounterMsg;
+		if(commandType == Command.INSERT_TABLE){
+			maxCounterMsg = 2;
+		}else{
+			maxCounterMsg = ports.length;
+		}
+		final CountDownLatch latch = new CountDownLatch(maxCounterMsg);
 		final Data[] result = new Data[ports.length];
 		
 		for(int i=0; i!=ports.length; ++i){
 			final int index = i;
+			
+			if(commands[index] == null)	continue;
 			
 			Thread t = new Thread(new Runnable() {
 				@Override
@@ -199,8 +207,8 @@ public class Node extends Thread{
 							
 							// output to the console
 							++counterMsgSent;
-							if(counterMsgSent == ports.length-1){
-								console.append("Command has been sent to " + counterMsgSent + " from " + ports.length + " nodes\n");
+							if(counterMsgSent == maxCounterMsg){
+								console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
 								counterMsgSent = 0;
 							}
 						
@@ -209,12 +217,22 @@ public class Node extends Thread{
 							
 							// output to the console
 							++counterMsgReceived;
-							if(counterMsgReceived == ports.length-1){
-								console.append("Command has been sent to " + counterMsgReceived + " from " + ports.length + " nodes\n");
+							if(counterMsgReceived == maxCounterMsg){
+								console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
 								counterMsgReceived = 0;
 							}
 						}else{
+							++counterMsgSent;
+							if(counterMsgSent == maxCounterMsg){
+								console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
+								counterMsgSent = 0;
+							}
 							result[index] = processCommand(commands[index]);
+							++counterMsgReceived;
+							if(counterMsgReceived == maxCounterMsg){
+								console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
+								counterMsgReceived = 0;
+							}
 						}
 					} catch (IOException e) {
 						console.append(e.getMessage() + '\n');

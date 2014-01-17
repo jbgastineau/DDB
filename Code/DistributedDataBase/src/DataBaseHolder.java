@@ -173,8 +173,9 @@ public class DataBaseHolder {
                                 String sql = command.input;
                                 stmt.executeUpdate(sql);
                                 stmt.close();
-                                console.append("Table INSERTED successfully" + '\n');
-                                result = new Data("Table INSERTED successfully");
+                                console.append("1 row inserted successfully" + '\n');								// Anton, new output
+                                result = new Data("1 row inserted successfully");									// Anton, new output
+                                result.success = true;																// Anton, new field in data
                         }catch(Exception e) {
                                 console.append(e.getClass().getName() + ": " + e.getMessage() + '\n');
                                 result = new Data(e.getMessage());

@@ -76,4 +76,9 @@ public class Command implements Serializable{
 		
 		return result;
 	}
+	
+	@Override
+	public String toString() {			// Anton, override method to simplify debugging
+		return input;
+	}
 }

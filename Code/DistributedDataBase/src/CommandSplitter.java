@@ -10,10 +10,17 @@ import java.util.Random;
  * @author Alrfou
  */
 public class CommandSplitter {
-        public static Command[] split(Command command, int n){
-                Command[] result = new Command[n];
-                System.out.println(n);
-                if(command.type == Command.CREATE_TABLE){
+	/**
+	 * prepares commands to nodes
+	 * 
+	 * @param command	command from the client
+	 * @param n			number of nodes
+	 * @return			prepared commands for nodes, command can be null if it is not executed on the node
+	 */
+	public static Command[] split(Command command, int n){
+		Command[] result = new Command[n];
+		System.out.println(n);
+				if(command.type == Command.CREATE_TABLE){
                         for(int i=0; i!=n; ++i){
                                 result[i] = Command.createCopy(command);
                         }
@@ -28,6 +35,7 @@ public class CommandSplitter {
                                 result[i] = Command.createCopy(command);
                         }
                 }else if(command.type == Command.INSERT_TABLE){
+                	/*
                    // System.out.println("GUGGHJ"+Command.SELECT_TABLE);
                     int alg=n/2 +1;
                       final int BASE = alg;
@@ -59,6 +67,19 @@ public class CommandSplitter {
                             
                                 result[test[i]-1] = Command.createCopy(command);
                         }
+                        */																	// Anton, code commented
+                	
+                	// create command for two nodes chosen by random						//	
+                	Random r = new Random();												// choose the first node
+                	int i1 = r.nextInt(n);													//
+                	result[i1] = Command.createCopy(command);								//
+                	
+                	int i2 = r.nextInt(n);													// chose the second node
+                	while(i2==i1){															//
+                		i2 = r.nextInt(n);													//
+                	}																		//
+                	result[i2] = Command.createCopy(command);								//
+                	
                 }else if(command.type == Command.UPDATE_TABLE){
                    // System.out.println("GUGGHJ"+Command.SELECT_TABLE);
                         for(int i=0; i!=n; ++i){
@@ -84,6 +105,19 @@ public class CommandSplitter {
 					}																			//
 				}																				// or return good i.e. the first one
         		return data[0];									
+        		
+        	}if(commandType == Command.INSERT_TABLE){
+        		
+        		for (Data d : data) {															//	
+					if(d!= null && d.success == false){											// return data with error
+						return d;																//
+					}																			//
+				}																				
+        		for (Data d : data) {
+					if(d!=null)	return d;														// or return good i.e. the first one
+				}
+        		
+        		return null;																	// expected that two data are not null
         		
         	}else{
                 String res = "";
