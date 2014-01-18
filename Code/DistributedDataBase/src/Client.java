@@ -66,6 +66,7 @@ public class Client extends Thread{
 			console.append("Connected to " + name +'\n');
 			
 			for(int i=0; i!=commands.length; ++i){
+				long time4 = System.currentTimeMillis();
 				// send to the node
 				out.writeObject(Message.CLIENT);
 				out.writeObject(commands[i]);
@@ -75,7 +76,6 @@ public class Client extends Thread{
 				if(commands[i].type == Command.SELECT_TABLE){
 					resetIndecies();
 					Data data = (Data)in.readObject();
-					console.append("--------------------\n");
 					int countSelected = 0;
 					while(data.nomoreselected == false){
 						if(checkDataForSelect(data)){
@@ -85,19 +85,19 @@ public class Client extends Thread{
 						data = (Data)in.readObject();
 					}
 					console.append(countSelected + " row selected\n");
-					console.append("--------------------\n");
+					
 				}else{
 					Data data = (Data)in.readObject();
-					console.append("--------------------\n");
 					data.display(commands[i].type, console);
-					console.append("--------------------\n");
 				}
+				long time5 = System.currentTimeMillis();
+				console.append(" + - - - - - - - - - - - - - Elapsed time: " + (time5-time4) + " ms.- - - - - - - - - - - - - - +\n");
 			}
 			
 			out.writeObject(Message.TERMINATE);
 			
 			long time3 = System.currentTimeMillis();
-			console.append("Execution time: " + (time3 - time2) + " ms.\n");
+			console.append("Total execution time: " + (time3 - time2) + " ms.\n");
 
 			// close socket
 			socket.close();

@@ -47,7 +47,7 @@ public class Data implements Serializable{
         }
         public void display(int commandType, JTextArea console) {							// Anton, new parameter, just for fun
         	
-        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE || commandType == Command.INSERT_TABLE || commandType == Command.SELECT_TABLE){	//
+        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE || commandType == Command.INSERT_TABLE || commandType == Command.SELECT_TABLE || commandType == Command.UPDATE_TABLE){	//
         		console.append(str + '\n');													// see above
         		
         	}else{

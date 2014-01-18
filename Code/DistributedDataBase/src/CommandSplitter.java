@@ -94,7 +94,7 @@ public class CommandSplitter {
         
         public static Data combineData(int commandType, Data[] data){							// Anton, new parameter added
         																						//
-        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE){		// Anton, in case of create table command
+        	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE || commandType == Command.UPDATE_TABLE){		// Anton, in case of create table command
         																						//
         		for (Data d : data) {															//	
 					if(d.success == false){														// Anton, return data with error

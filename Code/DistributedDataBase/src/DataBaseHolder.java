@@ -211,6 +211,7 @@ public class DataBaseHolder {
                                 stmt.close();
                                 console.append("Table UPDATED successfully" + '\n');
                                 result = new Data("Table UPDATED successfully");
+                                result.success = true;																// Anton, new field in data
                         }catch(Exception e) {
                                 console.append(e.getClass().getName() + ": " + e.getMessage() + '\n');
                                 result = new Data(e.getMessage());
