@@ -18,6 +18,7 @@ public class Data implements Serializable{
         public HashMap<String,String> res;
         public boolean success = false;																// Anton, new field to indicate if a command was executed successfully
         public boolean nomoreselected = false;														// Anton, new field to indicate for SELECT command that there are no more rows to fetch
+        public int id = -1;																			// Anton, new field to store row id
         
         /**
          * 

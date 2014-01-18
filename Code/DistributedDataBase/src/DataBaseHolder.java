@@ -222,36 +222,35 @@ public class DataBaseHolder {
         }
         
         public void executeSelect(Command command, ObjectOutputStream out){							// Anton, new function to process SELECT command
-        	Statement stmt = null;
-        	String res2 = "";
-
         	try {
                 try{
                 	String QRY = command.input;
-                	stmt = c.createStatement();
+                	Statement stmt = c.createStatement();
                 	ResultSet rs = stmt.executeQuery(QRY);
                 	ResultSetMetaData md = rs.getMetaData() ;
                 	SQLQuery sql=new SQLQuery();
                 	sql.parse(QRY);
                 	String tab=GetPrimarykey(sql.tables.get(0));
                 	System.out.println(tab+"is Primary key");
-                	String s = null ;
                 	while( rs.next() )
                 	{
-                		res2="";
+                		String res2="";
+                		int id = -1;
                 		for( int i = 1; i <= md.getColumnCount(); i++ )
                 		{
                 			System.out.println(md.getColumnLabel(i)+ rs.getString(i));
-                			if(md.getColumnName(i).equals(tab)){
-                				s=rs.getString(i);
+                			if(md.getColumnName(i).equals(tab.toUpperCase())){
+                				id = rs.getInt(i);
+
+                    			System.out.println(id + " :is the value of primary key");
                 			}
-                			System.out.println(s+":is the value of primary key");
                 			res2+=rs.getString(i)+" ";
          
                 		}
                 		
                 		Data result = new Data(res2.toString());
                 		result.success = true;
+                		result.id = id;
                 		synchronized (out) {
                 			out.writeObject(result);
 						}

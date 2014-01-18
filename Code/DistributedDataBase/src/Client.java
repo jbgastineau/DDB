@@ -73,12 +73,15 @@ public class Client extends Thread{
 			
 				// receive from the node
 				if(commands[i].type == Command.SELECT_TABLE){
+					resetIndecies();
 					Data data = (Data)in.readObject();
 					console.append("--------------------\n");
 					int countSelected = 0;
 					while(data.nomoreselected == false){
-						data.display(commands[i].type, console);
-						++ countSelected;
+						if(checkDataForSelect(data)){
+							data.display(commands[i].type, console);
+							++countSelected;
+						}
 						data = (Data)in.readObject();
 					}
 					console.append(countSelected + " row selected\n");
@@ -108,4 +111,28 @@ public class Client extends Thread{
 		}
 		
 	}
+	
+
+	
+	private boolean[] indecies = new boolean[65534];
+    
+    private void resetIndecies(){
+    	for(int i=0; i!=indecies.length; ++i){
+    		indecies[i] = false;
+    	}
+    }
+    
+    private boolean checkDataForSelect(Data data){
+    	
+    	if(data.id < 0 || data.id >= indecies.length){
+    		return true;
+    	}
+    	
+    	if(indecies[data.id]){
+    		return false;
+    	}else{
+    		indecies[data.id] = true;
+    		return true;
+    	}
+    }
 }
