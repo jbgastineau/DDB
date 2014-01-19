@@ -13,6 +13,8 @@ public class Client extends Thread{
 	private NodeName name;
 	private String[] inputs;
 	
+	private Socket socket;
+	
 	/**
 	 * constructor
 	 * 
@@ -33,6 +35,16 @@ public class Client extends Thread{
 		this.inputs = inputs;
 	}
 	
+	public void kill(){
+		if(socket != null){
+			try {
+				socket.close();
+			} catch (IOException e) {
+				console.append("Error on closing socket\n");
+			}
+		}
+	}
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Thread#run()
 	 */
@@ -41,7 +53,6 @@ public class Client extends Thread{
 		// clear console
 		console.setText("");
 		
-		Socket socket = null;
 		ObjectOutputStream out = null;
 		ObjectInputStream in = null;
 		
@@ -101,6 +112,7 @@ public class Client extends Thread{
 
 			// close socket
 			socket.close();
+			socket = null;
 			
 		} catch (UnknownHostException e) {
 			console.append(e.getMessage() + "\n");

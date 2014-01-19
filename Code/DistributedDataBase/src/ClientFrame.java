@@ -37,14 +37,24 @@ public class ClientFrame extends JFrame {
 	private JPanel contentPane;
 	private JSpinner portNumber;
 	private JTextArea console;
+	
+	private Client client = null;
 
 	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
 		
-		final int x = Integer.parseInt(args[0]);
-		final int y = Integer.parseInt(args[1]);
+		final int x;
+		final int y;
+		
+		if(args.length == 0){
+			x = 10;
+			y = 10;
+		}else{
+			x = Integer.parseInt(args[0]);
+			y = Integer.parseInt(args[1]);
+		}
 		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
@@ -89,6 +99,16 @@ public class ClientFrame extends JFrame {
 		
 		JButton btnRunFile = new JButton("Run from file ...");
 		panel.add(btnRunFile);
+		
+		JButton btnStop = new JButton("Stop");
+		btnStop.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				if(client != null){
+					client.kill();
+				}
+			}
+		});
+		panel.add(btnStop);
 		btnRunFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser chooser = new JFileChooser();
@@ -126,7 +146,7 @@ public class ClientFrame extends JFrame {
 	                    String[] commands = inputs.toArray(new String[inputs.size()]);
 	                    
 	                    // run client
-	                    Client client = new Client(console);
+	                    client = new Client(console);
 	    				client.setParam(new NodeName("localhost", (Integer)portNumber.getValue()), commands);
 	    				client.start();
 	                    

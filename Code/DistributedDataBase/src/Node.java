@@ -148,14 +148,12 @@ public class Node extends Thread{
 				console.append("Execution time: " + (time2 - time1) + " ms.\n");
 				
 			} catch (IOException e) {
-				console.append(e.getMessage() + '\n');
-				//e1.printStackTrace();
+				console.append("1. " + e.getMessage() + '\n');
+				terminateConnectionsToNodes();
 			} catch (ClassNotFoundException e) {
-				console.append(e.getMessage() + '\n');
-				//e.printStackTrace();
+				console.append("2. " + e.getMessage() + '\n');
 			} catch (InterruptedException e) {
-				console.append(e.getMessage() + '\n');
-				e.printStackTrace();
+				console.append("3. " + e.getMessage() + '\n');
 			}
 		}
 	}
