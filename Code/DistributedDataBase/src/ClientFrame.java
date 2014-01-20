@@ -9,13 +9,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import javax.swing.JLabel;
-import javax.swing.JSpinner;
 
 import java.awt.FlowLayout;
 
 import javax.swing.JFileChooser;
 import javax.swing.JButton;
-import javax.swing.SpinnerNumberModel;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -26,6 +24,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JTextField;
 
 
 public class ClientFrame extends JFrame {
@@ -35,10 +34,10 @@ public class ClientFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = -2709504377688590640L;
 	private JPanel contentPane;
-	private JSpinner portNumber;
 	private JTextArea console;
 	
 	private Client client = null;
+	private JTextField textNodes;
 
 	/**
 	 * Launch the application.
@@ -90,12 +89,13 @@ public class ClientFrame extends JFrame {
 		contentPane.add(panel, BorderLayout.SOUTH);
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
 		
-		JLabel lblPortNumber = new JLabel("Port number:");
+		JLabel lblPortNumber = new JLabel("Ports:");
 		panel.add(lblPortNumber);
 		
-		portNumber = new JSpinner();
-		panel.add(portNumber);
-		portNumber.setModel(new SpinnerNumberModel(new Integer(6001), null, null, new Integer(1)));
+		textNodes = new JTextField();
+		textNodes.setText("6001, 6002, 6003, 6004, 6005");
+		panel.add(textNodes);
+		textNodes.setColumns(80);
 		
 		JButton btnRunFile = new JButton("Run from file ...");
 		panel.add(btnRunFile);
@@ -109,6 +109,7 @@ public class ClientFrame extends JFrame {
 			}
 		});
 		panel.add(btnStop);
+		
 		btnRunFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser chooser = new JFileChooser();
@@ -145,9 +146,16 @@ public class ClientFrame extends JFrame {
 	                    
 	                    String[] commands = inputs.toArray(new String[inputs.size()]);
 	                    
+	                    // create nodes names
+	                    String[] parts = textNodes.getText().split(", ");
+	                    NodeName[] nodes = new NodeName[parts.length];
+	                    for(int i=0; i!=parts.length; ++i){
+	                    	nodes[i] = new NodeName("localhost", Integer.valueOf(parts[i]));
+	                    }
+	                    
 	                    // run client
 	                    client = new Client(console);
-	    				client.setParam(new NodeName("localhost", (Integer)portNumber.getValue()), commands);
+	    				client.setParam(nodes, commands);
 	    				client.start();
 	                    
 					} catch (FileNotFoundException e) {
@@ -158,9 +166,6 @@ public class ClientFrame extends JFrame {
                 }
 			}
 		});
-	}
-	public JSpinner getSpinner() {
-		return portNumber;
 	}
 	public JTextArea getConsole() {
 		return console;

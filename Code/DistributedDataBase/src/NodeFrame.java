@@ -48,15 +48,31 @@ public class NodeFrame extends JFrame {
 	 */
 	public static void main(String[] args) {
 		
-		final int x = Integer.parseInt(args[0]);
-		final int y = Integer.parseInt(args[1]);
-		final int port = Integer.parseInt(args[2]);
-		String temp[] = args[3].split(",");
-		final int[] ports = new int[temp.length];
-		for(int i=0; i!=temp.length; ++i){
-			ports[i] = Integer.parseInt(temp[i]);
+		final int x;
+		final int y;
+		final int port;
+		final int[] ports;
+		final String dbName;
+		
+		if(args.length == 0){
+			x = 10;
+			y = 10;
+			port = 6001;
+			ports = new int[]{6001, 6002, 6003, 6004, 6005};
+			dbName = "test1.db";
+		}else{
+			x = Integer.parseInt(args[0]);
+			y = Integer.parseInt(args[1]);
+			port = Integer.parseInt(args[2]);
+			String temp[] = args[3].split(",");
+			ports = new int[temp.length];
+			for(int i=0; i!=temp.length; ++i){
+				ports[i] = Integer.parseInt(temp[i]);
+			}
+			dbName = args[4];
 		}
-		final String dbName = args[4];
+		
+		
 		
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {

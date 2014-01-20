@@ -1,5 +1,4 @@
 
-import java.util.HashMap;
 import java.util.Random;
 
 /**
@@ -32,7 +31,7 @@ public class CommandSplitter {
                                 result[i] = Command.createCopy(command);
                         }
                 }else if(command.type == Command.INSERT_TABLE){
-                	/*
+                	/*																// Anton, some unknown algorithm is commented
                    // System.out.println("GUGGHJ"+Command.SELECT_TABLE);
                     int alg=n/2 +1;
                       final int BASE = alg;
@@ -97,11 +96,13 @@ public class CommandSplitter {
         	if(commandType == Command.CREATE_TABLE || commandType == Command.DROP_TABLE || commandType == Command.UPDATE_TABLE){		// Anton, in case of create table command
         																						//
         		for (Data d : data) {															//	
-					if(d.success == false){														// Anton, return data with error
+					if(d!=null && d.success == false){											// Anton, return data with error
 						return d;																//
 					}																			//
 				}																				// Anton, or return good i.e. the first one
-        		return data[0];									
+        		for (Data d : data) {
+					if(d!=null)	return d;														// Anton, or return good i.e. the first one
+				}								
         		
         	}if(commandType == Command.INSERT_TABLE){
         		
@@ -112,24 +113,24 @@ public class CommandSplitter {
 				}																				
         		for (Data d : data) {
 					if(d!=null)	return d;														// Anton, or return good i.e. the first one
-				}
+				}																				// Anton, expected that two data are not null
         		
-        		return null;																	// Anton, expected that two data are not null
-        		
-        	}else{
-                String res = "";
-                 HashMap<String,String> res1 = new HashMap<String,String>();
-                for(int i=0; i!=data.length; ++i){
-                        if(data[i] !=null){
-                                res += data[i].str ;
-                                if(data[i].res!=null)
-                                 res1.putAll(data[i].res);
-                                System.out.println("the colication data is"+i+ data[i].res);
-                        }
-                }
-                System.out.println("the colication data is"+ res1);
-                return new Data("Hello Client!"+'\n' + res,res1);
         	}
+        	return new Data("Something bad with INSERT command");
+        	//else{																				// Anton, commented not used code
+            //    String res = "";
+            //     HashMap<String,String> res1 = new HashMap<String,String>();
+            //   for(int i=0; i!=data.length; ++i){
+            //            if(data[i] !=null){
+            //                    res += data[i].str ;
+            //                    if(data[i].res!=null)
+            //                     res1.putAll(data[i].res);
+            //                    System.out.println("the colication data is"+i+ data[i].res);
+            //            }
+            //    }
+            //    System.out.println("the colication data is"+ res1);
+            //    return new Data("Hello Client!"+'\n' + res,res1);
+        	//}
         }
         
 }
