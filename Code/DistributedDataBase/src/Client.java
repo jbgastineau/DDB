@@ -55,8 +55,6 @@ public class Client extends Thread{
 	public void run() {
 		
 		while(repeat > 0){
-			// clear console
-			console.setText("");
 		
 			ObjectOutputStream out = null;
 			ObjectInputStream in = null;

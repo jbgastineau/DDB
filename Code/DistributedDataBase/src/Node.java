@@ -11,7 +11,8 @@ import javax.swing.JTextArea;
 
 public class Node extends Thread{
 	
-	private int[] ports;
+	private NodeName[] nodeNames;
+	private int numberOfNodes = -1;
 	
 	private JTextArea console;
 	private int port;
@@ -33,9 +34,10 @@ public class Node extends Thread{
 		dataBase = new DataBaseHolder(console);
 	}
 	
-	public void setParam(int port, int[] ports, String dbName){
+	public void setParam(int port, NodeName[] nodeNames, String dbName){
 		this.port = port;
-		this.ports = ports;
+		this.nodeNames = nodeNames;
+		this.numberOfNodes = nodeNames.length;
 		this.dbName = dbName;
 	}
 	
@@ -99,7 +101,7 @@ public class Node extends Thread{
 						Command command = (Command)in.readObject();
 						console.append(" -\nReceived command from the client\n");
 					
-						Command[] commands = CommandSplitter.split(command, ports.length);
+						Command[] commands = CommandSplitter.split(command, numberOfNodes);
 						
 						if(command.type == Command.SELECT_TABLE){
 							executeSelectCommandsOnNodes(commands, out);
@@ -170,21 +172,21 @@ public class Node extends Thread{
 	 */
 	private void establishConnectionsToNodes(){
 
-		nodesSocket = new Socket[ports.length];
-		nodesIn = new ObjectInputStream[ports.length];
-		nodesOut = new ObjectOutputStream[ports.length];
+		nodesSocket = new Socket[numberOfNodes];
+		nodesIn = new ObjectInputStream[numberOfNodes];
+		nodesOut = new ObjectOutputStream[numberOfNodes];
 		
-		for(int i=0; i!=ports.length; ++i){
-			if(ports[i] != serverSocket.getLocalPort()){
+		for(int i=0; i!=numberOfNodes; ++i){
+			if(nodeNames[i].port != serverSocket.getLocalPort()){
 				try {
-					nodesSocket[i] = new Socket("localhost", ports[i]);	// if node started IOException is thrown
+					nodesSocket[i] = new Socket(nodeNames[i].host, nodeNames[i].port);	// if node started IOException is thrown
 					nodesOut[i] = new ObjectOutputStream(nodesSocket[i].getOutputStream());
 					nodesIn[i] = new ObjectInputStream(nodesSocket[i].getInputStream());
 				} catch (UnknownHostException e) {
 					console.append("4. " + e.getMessage() + '\n');
 				} catch (IOException e) {
 					console.append("5. " + e.getMessage() + '\n');
-					console.append("Connection to the node " + ports[i] + " failed\n");
+					console.append("Connection to the node " + nodeNames[i] + " failed\n");
 					nodesSocket[i] = null;
 					nodesOut[i] = null;
 					nodesIn[i] = null;
@@ -198,12 +200,12 @@ public class Node extends Thread{
 		if(commandType == Command.INSERT_TABLE){
 			maxCounterMsg = 2;
 		}else{
-			maxCounterMsg = ports.length;
+			maxCounterMsg = numberOfNodes;
 		}
 		final CountDownLatch latch = new CountDownLatch(maxCounterMsg);
-		final Data[] result = new Data[ports.length];
+		final Data[] result = new Data[numberOfNodes];
 		
-		for(int i=0; i!=ports.length; ++i){
+		for(int i=0; i!=numberOfNodes; ++i){
 			final int index = i;
 			
 			if(commands[index] == null)	continue;
@@ -221,7 +223,7 @@ public class Node extends Thread{
 					try {
 						
 						// output to the console
-						if(ports[index] != serverSocket.getLocalPort()){
+						if(nodeNames[index].port != serverSocket.getLocalPort()){
 							if(nodesSocket[index] != null){
 								// send to the node
 								nodesOut[index].writeObject(Message.NODE);
@@ -264,10 +266,10 @@ public class Node extends Thread{
 	
 	
 	private void executeSelectCommandsOnNodes(final Command[] commands, final ObjectOutputStream clientOut) throws InterruptedException{
-		final int maxCounterMsg = ports.length;
+		final int maxCounterMsg = numberOfNodes;
 		final CountDownLatch latch = new CountDownLatch(maxCounterMsg);
 		
-		for(int i=0; i!=ports.length; ++i){
+		for(int i=0; i!=numberOfNodes; ++i){
 			final int index = i;
 			
 			if(commands[index] == null)	continue;
@@ -284,7 +286,7 @@ public class Node extends Thread{
 					}
 					
 					try {
-						if(ports[index] != serverSocket.getLocalPort()){
+						if(nodeNames[index].port != serverSocket.getLocalPort()){
 							if(nodesSocket[index] != null){
 								// send to the node
 								nodesOut[index].writeObject(Message.NODE);
@@ -333,7 +335,7 @@ public class Node extends Thread{
 		
 		if(nodesSocket == null) return;
 		
-		for(int i=0; i!=ports.length; ++i){
+		for(int i=0; i!=numberOfNodes; ++i){
 			if(nodesSocket[i] != null){
 				try {
 					nodesOut[i].writeObject(Message.TERMINATE);

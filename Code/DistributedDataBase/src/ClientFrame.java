@@ -7,7 +7,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-
 import javax.swing.JLabel;
 
 import java.awt.FlowLayout;
@@ -22,8 +21,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.swing.JTextField;
 
 
@@ -60,6 +61,10 @@ public class ClientFrame extends JFrame {
 				try {
 					ClientFrame frame = new ClientFrame();
 					frame.setBounds(x, y, 1300, 450);
+					
+					InetAddress IP = InetAddress.getLocalHost();
+ 					frame.setTitle(IP.toString());
+					
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -93,7 +98,7 @@ public class ClientFrame extends JFrame {
 		panel.add(lblPortNumber);
 		
 		textNodes = new JTextField();
-		textNodes.setText("6001, 6002, 6003, 6004, 6005");
+		textNodes.setText("localhost:6001, localhost:6002, localhost:6003, localhost:6004, localhost:6005");
 		panel.add(textNodes);
 		textNodes.setColumns(80);
 		
@@ -112,6 +117,10 @@ public class ClientFrame extends JFrame {
 		
 		btnRunFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+
+				// clear console
+				console.setText("");
+				
 				JFileChooser chooser = new JFileChooser();
                 chooser.setCurrentDirectory(new File(".\\sqlscripts"));
                 chooser.setSelectedFile(new File("Unnamed"));
@@ -150,7 +159,12 @@ public class ClientFrame extends JFrame {
 	                    String[] parts = textNodes.getText().split(", ");
 	                    NodeName[] nodes = new NodeName[parts.length];
 	                    for(int i=0; i!=parts.length; ++i){
-	                    	nodes[i] = new NodeName("localhost", Integer.valueOf(parts[i]));
+	                    	nodes[i] = NodeName.parse(parts[i]);
+	                    	if(nodes[i] == null){
+	                    		console.append("Error in node name: " + parts[i] + "\n");
+	                    	}else{
+	                    		console.append("Node " + i + ": " + nodes[i] + "\n");
+	                    	}
 	                    }
 	                    
 	                    // run client
