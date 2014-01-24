@@ -47,13 +47,16 @@ public class ClientFrame extends JFrame {
 		
 		final int x;
 		final int y;
+		final String nodes;
 		
 		if(args.length == 0){
 			x = 10;
 			y = 10;
+			nodes = "192.168.56.101:6001, 192.168.56.102:6001, 192.168.56.103:6001, 192.168.56.104:6001";
 		}else{
 			x = Integer.parseInt(args[0]);
 			y = Integer.parseInt(args[1]);
+			nodes = "localhost:6001, localhost:6002, localhost:6003, localhost:6004, localhost:6005";
 		}
 		
 		EventQueue.invokeLater(new Runnable() {
@@ -61,6 +64,7 @@ public class ClientFrame extends JFrame {
 				try {
 					ClientFrame frame = new ClientFrame();
 					frame.setBounds(x, y, 1300, 450);
+					frame.getTextNodes().setText(nodes);
 					
 					InetAddress IP = InetAddress.getLocalHost();
  					frame.setTitle(IP.toString());
@@ -183,5 +187,8 @@ public class ClientFrame extends JFrame {
 	}
 	public JTextArea getConsole() {
 		return console;
+	}
+	public JTextField getTextNodes() {
+		return textNodes;
 	}
 }

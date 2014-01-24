@@ -19,6 +19,7 @@ import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 
 public class NodeFrame extends JFrame {
@@ -56,7 +57,7 @@ public class NodeFrame extends JFrame {
 			width = 550;
 			height = 600;
 			port = 6001;
-			nodeNames = "localhost:6001, localhost:6002, localhost:6003, localhost:6004, localhost:6005";
+			nodeNames = "192.168.56.101:6001, 192.168.56.102:6001, 192.168.56.103:6001, 192.168.56.104:6001";
 			dbName = "test1.db";
 		}else{
 			x = Integer.parseInt(args[0]);
@@ -163,27 +164,31 @@ public class NodeFrame extends JFrame {
 		panel_2.add(btnStop);
 		btnSrart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				
-				if(node != null)	return;
-				
-				int port = Integer.parseInt(portNumber.getText());
-				
-				// create nodes names
-                String[] parts = otherNodes.getText().split(", ");
-                NodeName[] nodes = new NodeName[parts.length];
-                for(int i=0; i!=parts.length; ++i){
-                	nodes[i] = NodeName.parse(parts[i]);
-                	if(nodes[i] == null){
-                		console.append("Error in node name: " + parts[i] + "\n");
-                	}else{
-                		console.append("Node " + i + ": " + nodes[i] + "\n");
-                	}
-                }
-				
-				
-				node = new Node(console);
-				node.setParam(port, nodes, dbName.getText());
-				node.start();
+				try {
+					if(node != null)	return;
+					
+					int port = Integer.parseInt(portNumber.getText());
+					
+					// create nodes names
+	                String[] parts = otherNodes.getText().split(", ");
+	                NodeName[] nodes = new NodeName[parts.length];
+	                for(int i=0; i!=parts.length; ++i){
+	                	nodes[i] = NodeName.parse(parts[i]);
+	                	if(nodes[i] == null){
+	                		console.append("Error in node name: " + parts[i] + "\n");
+	                	}else{
+	                		console.append("Node " + i + ": " + nodes[i] + "\n");
+	                	}
+	                }
+					
+					
+					node = new Node(console);
+					node.setParam(port, nodes, dbName.getText());
+					node.start();
+				} catch (UnknownHostException e) {
+					console.append("Can not start: " + e.getMessage() + "\n");
+					
+				}
 			}
 		});
 	}

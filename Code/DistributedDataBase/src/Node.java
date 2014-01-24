@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -15,7 +16,7 @@ public class Node extends Thread{
 	private int numberOfNodes = -1;
 	
 	private JTextArea console;
-	private int port;
+	private NodeName myName;
 	private String dbName;
 	private boolean repeat = true;
 	private int counterMsgSent = 0;
@@ -34,8 +35,10 @@ public class Node extends Thread{
 		dataBase = new DataBaseHolder(console);
 	}
 	
-	public void setParam(int port, NodeName[] nodeNames, String dbName){
-		this.port = port;
+	public void setParam(int port, NodeName[] nodeNames, String dbName) throws UnknownHostException{
+
+		InetAddress IP = InetAddress.getLocalHost();
+		this.myName = new NodeName(IP.getHostAddress(), port);
 		this.nodeNames = nodeNames;
 		this.numberOfNodes = nodeNames.length;
 		this.dbName = dbName;
@@ -61,12 +64,10 @@ public class Node extends Thread{
 	@Override
 	public void run() {
 		try {
-			serverSocket = new ServerSocket(port);
-			
-			console.append("Started on port " + port + "\n");
+			serverSocket = new ServerSocket(myName.port);
+			console.append("Started on port " + myName.toString() + "\n");
 		} catch (IOException e1) {
-			console.append("Not started\n");
-			e1.printStackTrace();
+			console.append("Not started " + e1.getMessage() + "\n");
 		}
 		
 		if(serverSocket == null){
@@ -75,7 +76,7 @@ public class Node extends Thread{
 		}
 		
 		dataBase.connect(dbName);
-		
+
 		while(repeat){
 			
 			try {
@@ -177,7 +178,7 @@ public class Node extends Thread{
 		nodesOut = new ObjectOutputStream[numberOfNodes];
 		
 		for(int i=0; i!=numberOfNodes; ++i){
-			if(nodeNames[i].port != serverSocket.getLocalPort()){
+			if(!nodeNames[i].equals(myName)){
 				try {
 					nodesSocket[i] = new Socket(nodeNames[i].host, nodeNames[i].port);	// if node started IOException is thrown
 					nodesOut[i] = new ObjectOutputStream(nodesSocket[i].getOutputStream());
@@ -223,7 +224,7 @@ public class Node extends Thread{
 					try {
 						
 						// output to the console
-						if(nodeNames[index].port != serverSocket.getLocalPort()){
+						if(!nodeNames[index].equals(myName)){
 							if(nodesSocket[index] != null){
 								// send to the node
 								nodesOut[index].writeObject(Message.NODE);
@@ -286,7 +287,7 @@ public class Node extends Thread{
 					}
 					
 					try {
-						if(nodeNames[index].port != serverSocket.getLocalPort()){
+						if(!nodeNames[index].equals(myName)){
 							if(nodesSocket[index] != null){
 								// send to the node
 								nodesOut[index].writeObject(Message.NODE);

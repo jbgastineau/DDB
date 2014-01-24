@@ -76,6 +76,7 @@ public class Client extends Thread{
 				// prepare socket, input and output streams
 				Random r = new Random();
 				int index = r.nextInt(nodes.length);
+				console.append("Connecting to " + nodes[index] +'\n');
 				socket = new Socket(nodes[index].host, nodes[index].port);
 				out = new ObjectOutputStream(socket.getOutputStream());
 				in = new ObjectInputStream(socket.getInputStream());
