@@ -183,7 +183,7 @@ public class ClientFrame extends JFrame {
 	    				 * 
 	    				 * @author Alvar Viana
 	    				 */
-	    				client.runTests();
+	    				//client.runTests();
 	                    
 					} catch (FileNotFoundException e) {
 						console.append(e.getMessage() + "\n");
