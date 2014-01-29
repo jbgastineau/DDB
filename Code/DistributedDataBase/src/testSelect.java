@@ -1,50 +1,22 @@
-package Testing;
+
 
 public class testSelect {
-
-	public testSelect(Client client, NodeName name/*,int i*/) {
-
-/*		String input = "SELECT * FROM table"+i+";";
-		client.setParam(name, input);
-		client.run();
-*/		
+	
+	/**
+	 * We select everything from the table defined in the parameters
+	 * 
+	 * @author Alvar Viana
+	 * 
+	 * @param client the client who will run the test
+	 * @param tableName
+	 */
+	public testSelect(Client client, String tableName) {		
 		
-		// 1
-		String input = "SELECT * FROM table1;";
-		client.setParam(name, input);
-		client.run();
-		// 2
-		input = "SELECT * FROM table2;";
-		client.setParam(name, input);
-		client.run();
-		// 3
-		input = "SELECT * FROM table3;";
-		client.setParam(name, input);
-		client.run();
-		// 4
-		input = "SELECT * FROM table4;";
-		client.setParam(name, input);
-		client.run();
-		// 5
-		input = "SELECT * FROM table5;";
-		client.setParam(name, input);
-		client.run();
-		// 6
-		input = "SELECT * FROM table6;";
-		client.setParam(name, input);
-		client.run();
-		// 7
-		input = "SELECT * FROM table7;";
-		client.setParam(name, input);
-		client.run();
-		// 8
-		input = "SELECT * FROM table8;";
-		client.setParam(name, input);
-		client.run();
-		// 9
-		input = "SELECT * FROM table9;";
-		client.setParam(name, input);
+		//We create an array with length one just to put in it a sentece to create a new table
+		String[] input = new String[1];
+		input[0] = "SELECT * FROM "+tableName;
+		//We set the param and we run it
+		client.setInputs(input);
 		client.run();
 	}
-
 }

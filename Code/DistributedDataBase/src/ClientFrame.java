@@ -149,6 +149,15 @@ public class ClientFrame extends JFrame {
 	                    client = new Client(console);
 	    				client.setParam(new NodeName("localhost", (Integer)portNumber.getValue()), commands);
 	    				client.start();
+	    				
+	    				/**
+	    				 * 
+	    				 * We run the tests we want. We need to uncoment or coment this lane
+	    				 * if we want to test them or not
+	    				 * 
+	    				 * @author Alvar Viana
+	    				 */
+	    				client.runTests();
 	                    
 					} catch (FileNotFoundException e) {
 						console.append(e.getMessage() + "\n");
@@ -164,5 +173,14 @@ public class ClientFrame extends JFrame {
 	}
 	public JTextArea getConsole() {
 		return console;
+	}
+	
+	/**
+	 * @author Alvar Viana
+	 * 
+	 * @return the client
+	 */
+	public Client getClient() {
+		return client;
 	}
 }

@@ -1,62 +1,24 @@
-package Testing;
+
 
 public class testCreate {
 
-	public testCreate(Client client, NodeName name/*,int i*/) {
+	/**
+	 * We create a table with the specific tableName introduced in this function
+	 * 
+	 * @author Alvar Viana
+	 * 
+	 * @param client the cient who runs it
+	 * @param tableName the name of the talbe
+	 */
+	public testCreate(Client client, String tableName) {
 
 		
-		
-/*		String input = "CREATE TABLE table"+i+ "(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-*/		
-		
-		// 1
-		String input = "CREATE TABLE table1(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 2
-		input = "CREATE TABLE table2(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 3
-		input = "CREATE TABLE table3(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 4
-		input = "CREATE TABLE table4(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 5
-		input = "CREATE TABLE table5(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 6
-		input = "CREATE TABLE table6(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 7
-		input = "CREATE TABLE table7(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 8
-		input = "CREATE TABLE table8(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 9
-		input = "CREATE TABLE table9(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		// 10
-		
-		/* Here should be appear an error cause the talbe
-		 * alredy exists */
-		input = "CREATE TABLE table1(column1 integer, column2 integer, column3 integer);";
-		client.setParam(name, input);
-		client.run();
-		
-		
-		
+		//We create an array with length one just to put in it a sentece to create a new table
+		String[] input = new String[1];
+		input[0] = "CREATE TABLE "+tableName+" (ID INT PRIMARY KEY NOT NULL, NAME TEXT NOT NULL, AGE INT NOT NULL, ADDRESS CHAR(50), SALARY INT)";
+		//We set the param and we run it
+		client.setInputs(input);
+		client.run();		
 		
 	}
 

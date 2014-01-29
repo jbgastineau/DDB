@@ -123,9 +123,8 @@ public class Client extends Thread{
 		}
 		
 	}
-	
 
-	
+
 	private boolean[] indecies = new boolean[65534];
     
     private void resetIndecies(){
@@ -147,4 +146,36 @@ public class Client extends Thread{
     		return true;
     	}
     }
+    
+    /**
+	 * @return the inputs
+	 * 
+	 * @author Alvar Viana
+	 */
+	public String[] getInputs() {
+		return inputs;
+	}
+
+	/**
+	 * @param inputs the inputs to set
+	 * 
+	 * @author Alvar Viana
+	 */
+	public void setInputs(String[] inputs) {
+		this.inputs = inputs;
+	}
+
+	/**
+	 * We run the tests passing these client to the ExecuteTesting 
+	 * 
+	 * @author Alvar Viana
+	 */
+	public void runTests() {
+		
+		ExecuteTesting testing = new ExecuteTesting();
+		testing.executeTests(this);
+		
+	}
+	
+	
 }
