@@ -3,8 +3,8 @@ public class Launcher {
 	
 	private static final int NUMBER_OF_NODES = 5;
 	
-	//private static final String PORTS_LIST_4 = "6001,6002,6003,6004";
-	private static final String PORTS_LIST_5 = "6001,6002,6003,6004,6005";
+	//private static final String PORTS_LIST_4 = "localhost:6001, localhost:6002, localhost:6003, localhost:6004";
+	private static final String PORTS_LIST_5 = "localhost:6001, localhost:6002, localhost:6003, localhost:6004, localhost:6005";
 
 	private static final int[] PORTS = new int[]{6001, 6002, 6003, 6004, 6005};
 	

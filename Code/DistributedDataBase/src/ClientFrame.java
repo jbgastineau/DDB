@@ -7,15 +7,12 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-
 import javax.swing.JLabel;
-import javax.swing.JSpinner;
 
 import java.awt.FlowLayout;
 
 import javax.swing.JFileChooser;
 import javax.swing.JButton;
-import javax.swing.SpinnerNumberModel;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -24,8 +21,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.swing.JTextField;
 
 
 public class ClientFrame extends JFrame {
@@ -35,10 +35,10 @@ public class ClientFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = -2709504377688590640L;
 	private JPanel contentPane;
-	private JSpinner portNumber;
 	private JTextArea console;
 	
 	private Client client = null;
+	private JTextField textNodes;
 
 	/**
 	 * Launch the application.
@@ -47,13 +47,16 @@ public class ClientFrame extends JFrame {
 		
 		final int x;
 		final int y;
+		final String nodes;
 		
 		if(args.length == 0){
 			x = 10;
 			y = 10;
+			nodes = "192.168.56.101:6001, 192.168.56.102:6001, 192.168.56.103:6001, 192.168.56.104:6001";
 		}else{
 			x = Integer.parseInt(args[0]);
 			y = Integer.parseInt(args[1]);
+			nodes = "localhost:6001, localhost:6002, localhost:6003, localhost:6004, localhost:6005";
 		}
 		
 		EventQueue.invokeLater(new Runnable() {
@@ -61,6 +64,11 @@ public class ClientFrame extends JFrame {
 				try {
 					ClientFrame frame = new ClientFrame();
 					frame.setBounds(x, y, 1300, 450);
+					frame.getTextNodes().setText(nodes);
+					
+					InetAddress IP = InetAddress.getLocalHost();
+ 					frame.setTitle(IP.toString());
+					
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -90,12 +98,13 @@ public class ClientFrame extends JFrame {
 		contentPane.add(panel, BorderLayout.SOUTH);
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
 		
-		JLabel lblPortNumber = new JLabel("Port number:");
+		JLabel lblPortNumber = new JLabel("Ports:");
 		panel.add(lblPortNumber);
 		
-		portNumber = new JSpinner();
-		panel.add(portNumber);
-		portNumber.setModel(new SpinnerNumberModel(new Integer(6001), null, null, new Integer(1)));
+		textNodes = new JTextField();
+		textNodes.setText("localhost:6001, localhost:6002, localhost:6003, localhost:6004, localhost:6005");
+		panel.add(textNodes);
+		textNodes.setColumns(80);
 		
 		JButton btnRunFile = new JButton("Run from file ...");
 		panel.add(btnRunFile);
@@ -109,8 +118,13 @@ public class ClientFrame extends JFrame {
 			}
 		});
 		panel.add(btnStop);
+		
 		btnRunFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+
+				// clear console
+				console.setText("");
+				
 				JFileChooser chooser = new JFileChooser();
                 chooser.setCurrentDirectory(new File(".\\sqlscripts"));
                 chooser.setSelectedFile(new File("Unnamed"));
@@ -145,9 +159,21 @@ public class ClientFrame extends JFrame {
 	                    
 	                    String[] commands = inputs.toArray(new String[inputs.size()]);
 	                    
+	                    // create nodes names
+	                    String[] parts = textNodes.getText().split(", ");
+	                    NodeName[] nodes = new NodeName[parts.length];
+	                    for(int i=0; i!=parts.length; ++i){
+	                    	nodes[i] = NodeName.parse(parts[i]);
+	                    	if(nodes[i] == null){
+	                    		console.append("Error in node name: " + parts[i] + "\n");
+	                    	}else{
+	                    		console.append("Node " + i + ": " + nodes[i] + "\n");
+	                    	}
+	                    }
+	                    
 	                    // run client
 	                    client = new Client(console);
-	    				client.setParam(new NodeName("localhost", (Integer)portNumber.getValue()), commands);
+	    				client.setParam(nodes, commands);
 	    				client.start();
 	    				
 	    				/**
@@ -168,9 +194,6 @@ public class ClientFrame extends JFrame {
 			}
 		});
 	}
-	public JSpinner getSpinner() {
-		return portNumber;
-	}
 	public JTextArea getConsole() {
 		return console;
 	}
@@ -182,5 +205,9 @@ public class ClientFrame extends JFrame {
 	 */
 	public Client getClient() {
 		return client;
+		}
+		
+	public JTextField getTextNodes() {
+		return textNodes;
 	}
 }

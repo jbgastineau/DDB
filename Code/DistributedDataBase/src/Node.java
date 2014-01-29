@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -11,10 +12,11 @@ import javax.swing.JTextArea;
 
 public class Node extends Thread{
 	
-	private int[] ports;
+	private NodeName[] nodeNames;
+	private int numberOfNodes = -1;
 	
 	private JTextArea console;
-	private int port;
+	private NodeName myName;
 	private String dbName;
 	private boolean repeat = true;
 	private int counterMsgSent = 0;
@@ -33,17 +35,25 @@ public class Node extends Thread{
 		dataBase = new DataBaseHolder(console);
 	}
 	
-	public void setParam(int port, int[] ports, String dbName){
-		this.port = port;
-		this.ports = ports;
+	public void setParam(int port, NodeName[] nodeNames, String dbName) throws UnknownHostException{
+
+		InetAddress IP = InetAddress.getLocalHost();
+		this.myName = new NodeName(IP.getHostAddress(), port);
+		this.nodeNames = nodeNames;
+		this.numberOfNodes = nodeNames.length;
 		this.dbName = dbName;
 	}
 	
 	public void kill(){
+
 		repeat = false;
 		if(serverSocket != null){
 			try {
 				serverSocket.close();
+				serverSocket = null;
+				
+				dataBase.disconnect();
+				
 			} catch (IOException e) {
 				console.append("Error on closing ServerSocket\n");
 				e.printStackTrace();
@@ -54,12 +64,10 @@ public class Node extends Thread{
 	@Override
 	public void run() {
 		try {
-			serverSocket = new ServerSocket(port);
-			
-			console.append("Started on port " + port + "\n");
+			serverSocket = new ServerSocket(myName.port);
+			console.append("Started on port " + myName.toString() + "\n");
 		} catch (IOException e1) {
-			console.append("Not started\n");
-			e1.printStackTrace();
+			console.append("Not started " + e1.getMessage() + "\n");
 		}
 		
 		if(serverSocket == null){
@@ -68,7 +76,7 @@ public class Node extends Thread{
 		}
 		
 		dataBase.connect(dbName);
-		
+
 		while(repeat){
 			
 			try {
@@ -94,7 +102,7 @@ public class Node extends Thread{
 						Command command = (Command)in.readObject();
 						console.append(" -\nReceived command from the client\n");
 					
-						Command[] commands = CommandSplitter.split(command, ports.length);
+						Command[] commands = CommandSplitter.split(command, numberOfNodes);
 						
 						if(command.type == Command.SELECT_TABLE){
 							executeSelectCommandsOnNodes(commands, out);
@@ -125,7 +133,7 @@ public class Node extends Thread{
 						console.append(" - Received command from the main node\n");
 						
 						if(command.type == Command.SELECT_TABLE){
-							processSelectCommand(command, out);
+							dataBase.executeSelect(command, out);
 							
 		                	Data result = new Data();
 		                	result.nomoreselected = true;
@@ -135,7 +143,7 @@ public class Node extends Thread{
 							}
 		                	console.append("terminator is sent to the main node\n");
 						}else{
-							Data data = processCommand(command);
+							Data data = dataBase.execute(command);
 							out.writeObject(data);
 							console.append("Sent data to the main node\n");
 						}
@@ -158,62 +166,47 @@ public class Node extends Thread{
 		}
 	}
 	
-	private Data processCommand(Command command){
-		Data result;
-		if(command.input.endsWith("Hello Node!")){
-			result = new Data("Hello from node" + serverSocket.getLocalPort());
-		}else if(command.type == Command.CREATE_TABLE){
-            result = dataBase.execute(command);
-		}else if(command.type == Command.DROP_TABLE){
-            result = dataBase.execute(command);
-		}else if(command.type == Command.INSERT_TABLE){
-            result = dataBase.execute(command);
-		}else if(command.type == Command.UPDATE_TABLE){
-            result = dataBase.execute(command);
-		}else{
-            result = new Data("Unknown coommand");
-		}
-		return result;
-	}
-	
-	private void processSelectCommand(Command command, ObjectOutputStream out){
-		dataBase.executeSelect(command, out);
-	}
-	
+	/**
+	 * creates sockets to connect to other nodes
+	 * 
+	 * socket to itself remains null
+	 */
 	private void establishConnectionsToNodes(){
 
-		nodesSocket = new Socket[ports.length];
-		nodesIn = new ObjectInputStream[ports.length];
-		nodesOut = new ObjectOutputStream[ports.length];
+		nodesSocket = new Socket[numberOfNodes];
+		nodesIn = new ObjectInputStream[numberOfNodes];
+		nodesOut = new ObjectOutputStream[numberOfNodes];
 		
-		for(int i=0; i!=ports.length; ++i){
-			if(ports[i] != serverSocket.getLocalPort()){
+		for(int i=0; i!=numberOfNodes; ++i){
+			if(!nodeNames[i].equals(myName)){
 				try {
-					nodesSocket[i] = new Socket("localhost", ports[i]);
+					nodesSocket[i] = new Socket(nodeNames[i].host, nodeNames[i].port);	// if node started IOException is thrown
 					nodesOut[i] = new ObjectOutputStream(nodesSocket[i].getOutputStream());
 					nodesIn[i] = new ObjectInputStream(nodesSocket[i].getInputStream());
 				} catch (UnknownHostException e) {
-					console.append(e.getMessage() + '\n');
-					//e.printStackTrace();
+					console.append("4. " + e.getMessage() + '\n');
 				} catch (IOException e) {
-					console.append(e.getMessage() + '\n');
-					//e.printStackTrace();
+					console.append("5. " + e.getMessage() + '\n');
+					console.append("Connection to the node " + nodeNames[i] + " failed\n");
+					nodesSocket[i] = null;
+					nodesOut[i] = null;
+					nodesIn[i] = null;
 				}
 			}
 		}
 	}
 	
-	private Data[] executeCommandsOnNodes(int commandType,final Command[] commands) throws InterruptedException{
+	private Data[] executeCommandsOnNodes(int commandType, final Command[] commands) throws InterruptedException{
 		final int maxCounterMsg;
 		if(commandType == Command.INSERT_TABLE){
 			maxCounterMsg = 2;
 		}else{
-			maxCounterMsg = ports.length;
+			maxCounterMsg = numberOfNodes;
 		}
 		final CountDownLatch latch = new CountDownLatch(maxCounterMsg);
-		final Data[] result = new Data[ports.length];
+		final Data[] result = new Data[numberOfNodes];
 		
-		for(int i=0; i!=ports.length; ++i){
+		for(int i=0; i!=numberOfNodes; ++i){
 			final int index = i;
 			
 			if(commands[index] == null)	continue;
@@ -222,47 +215,43 @@ public class Node extends Thread{
 				@Override
 				public void run() {
 					
+					++counterMsgSent;
+					if(counterMsgSent == maxCounterMsg){
+						console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
+						counterMsgSent = 0;
+					}
+					
 					try {
-						if(ports[index] != serverSocket.getLocalPort()){
-							// send to the node
-							nodesOut[index].writeObject(Message.NODE);
-							nodesOut[index].writeObject(commands[index]);
-							
-							// output to the console
-							++counterMsgSent;
-							if(counterMsgSent == maxCounterMsg){
-								console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
-								counterMsgSent = 0;
-							}
 						
-							// receive from the node
-							result[index] = (Data)nodesIn[index].readObject();
-							
-							// output to the console
-							++counterMsgReceived;
-							if(counterMsgReceived == maxCounterMsg){
-								console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
-								counterMsgReceived = 0;
+						// output to the console
+						if(!nodeNames[index].equals(myName)){
+							if(nodesSocket[index] != null){
+								// send to the node
+								nodesOut[index].writeObject(Message.NODE);
+								nodesOut[index].writeObject(commands[index]);
+						
+								// receive from the node
+								result[index] = (Data)nodesIn[index].readObject();
 							}
 						}else{
-							++counterMsgSent;
-							if(counterMsgSent == maxCounterMsg){
-								console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
-								counterMsgSent = 0;
-							}
-							result[index] = processCommand(commands[index]);
-							++counterMsgReceived;
-							if(counterMsgReceived == maxCounterMsg){
-								console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
-								counterMsgReceived = 0;
-							}
+							result[index] = dataBase.execute(commands[index]);
+							
 						}
 					} catch (IOException e) {
-						console.append(e.getMessage() + '\n');
+						console.append("6. " + e.getMessage() + '\n');
+						nodesSocket[index] = null;
+						nodesOut[index] = null;
+						nodesIn[index] = null;
 					} catch (ClassNotFoundException e) {
-						console.append(e.getMessage() + '\n');
+						console.append("7. "+ e.getMessage() + '\n');
 					}finally{
 						latch.countDown();
+					}
+					
+					++counterMsgReceived;
+					if(counterMsgReceived == maxCounterMsg){
+						console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
+						counterMsgReceived = 0;
 					}
 				}
 			});
@@ -278,10 +267,10 @@ public class Node extends Thread{
 	
 	
 	private void executeSelectCommandsOnNodes(final Command[] commands, final ObjectOutputStream clientOut) throws InterruptedException{
-		final int maxCounterMsg = ports.length;
+		final int maxCounterMsg = numberOfNodes;
 		final CountDownLatch latch = new CountDownLatch(maxCounterMsg);
 		
-		for(int i=0; i!=ports.length; ++i){
+		for(int i=0; i!=numberOfNodes; ++i){
 			final int index = i;
 			
 			if(commands[index] == null)	continue;
@@ -290,53 +279,48 @@ public class Node extends Thread{
 				@Override
 				public void run() {
 					
+					// output to the console
+					++counterMsgSent;
+					if(counterMsgSent == maxCounterMsg){
+						console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
+						counterMsgSent = 0;
+					}
+					
 					try {
-						if(ports[index] != serverSocket.getLocalPort()){
-							// send to the node
-							nodesOut[index].writeObject(Message.NODE);
-							nodesOut[index].writeObject(commands[index]);
+						if(!nodeNames[index].equals(myName)){
+							if(nodesSocket[index] != null){
+								// send to the node
+								nodesOut[index].writeObject(Message.NODE);
+								nodesOut[index].writeObject(commands[index]);
 							
-							// output to the console
-							++counterMsgSent;
-							if(counterMsgSent == maxCounterMsg){
-								console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
-								counterMsgSent = 0;
-							}
-						
-							// receive from the node
-							Data data = (Data)nodesIn[index].readObject();
-							while(data.nomoreselected == false){
-								synchronized (clientOut) {
-									clientOut.writeObject(data);
+								// receive from the node
+								Data data = (Data)nodesIn[index].readObject();
+								while(data.nomoreselected == false){
+									synchronized (clientOut) {
+										clientOut.writeObject(data);
+									}
+									data = (Data)nodesIn[index].readObject();
 								}
-								data = (Data)nodesIn[index].readObject();
-							}
-							
-							// output to the console
-							++counterMsgReceived;
-							if(counterMsgReceived == maxCounterMsg){
-								console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
-								counterMsgReceived = 0;
 							}
 						}else{
-							++counterMsgSent;
-							if(counterMsgSent == maxCounterMsg){
-								console.append("Command has been sent to " + counterMsgSent + " of " + maxCounterMsg + " nodes\n");
-								counterMsgSent = 0;
-							}
-							processSelectCommand(commands[index], clientOut);
-							++counterMsgReceived;
-							if(counterMsgReceived == maxCounterMsg){
-								console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
-								counterMsgReceived = 0;
-							}
+							dataBase.executeSelect(commands[index], clientOut);
 						}
 					} catch (IOException e) {
-						console.append(e.getMessage() + '\n');
+						console.append("8. " + e.getMessage() + '\n');
+						nodesSocket[index] = null;
+						nodesOut[index] = null;
+						nodesIn[index] = null;
 					} catch (ClassNotFoundException e) {
-						console.append(e.getMessage() + '\n');
+						console.append("9. " + e.getMessage() + '\n');
 					}finally{
 						latch.countDown();
+					}
+					
+					// output to the console
+					++counterMsgReceived;
+					if(counterMsgReceived == maxCounterMsg){
+						console.append("Command has been recieved from " + counterMsgReceived + " of " + maxCounterMsg + " nodes\n");
+						counterMsgReceived = 0;
 					}
 				}
 			});
@@ -349,7 +333,10 @@ public class Node extends Thread{
 	}
 	
 	private void terminateConnectionsToNodes(){
-		for(int i=0; i!=ports.length; ++i){
+		
+		if(nodesSocket == null) return;
+		
+		for(int i=0; i!=numberOfNodes; ++i){
 			if(nodesSocket[i] != null){
 				try {
 					nodesOut[i].writeObject(Message.TERMINATE);
